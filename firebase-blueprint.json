@@ -1,0 +1,33 @@
+{
+  "entities": {
+    "fan_messages": {
+      "title": "Fan Messages",
+      "description": "Public guestbook messages and fan reactions for Shubhashree",
+      "type": "object",
+      "properties": {
+        "author": { "type": "string", "description": "Name or handle of the fan" },
+        "avatar": { "type": "string", "description": "Selected avatar or initial" },
+        "location": { "type": "string", "description": "City or Country" },
+        "text": { "type": "string", "description": "Fan message content" },
+        "badge": { "type": "string", "description": "Fan category badge" },
+        "likes": { "type": "number", "description": "Like counter" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["author", "text", "createdAt"]
+    },
+    "collaborations": {
+      "title": "Collaboration Inquiries",
+      "description": "Brand collaboration and sponsorship inquiries",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "brand": { "type": "string" },
+        "budget": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "brand", "message"]
+    }
+  }
+}

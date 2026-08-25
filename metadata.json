@@ -1,0 +1,6 @@
+{
+  "name": "Shubhashree Sahu Fan Portal",
+  "description": "The ultimate fan hub for influencer Shubhashree Sahu featuring curated HD photo galleries, latest news, live social media updates, fan art showcase, and community fan wall.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
