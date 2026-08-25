@@ -111,7 +111,7 @@ export default function App() {
       />
 
       {/* Main Fan Portal Modules */}
-      <main className="flex-1 w-full max-w-7xl mx-auto overflow-hidden">
+      <main className="flex-1 w-full overflow-hidden pt-[72px]">
         {/* Hero Influencer Showcase with Three.js & GSAP */}
         <HeroSection
           onExploreGallery={() => handleNavigate('gallery')}

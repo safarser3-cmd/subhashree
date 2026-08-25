@@ -113,13 +113,38 @@ export const ThreeParticleRevealCanvas: React.FC<ParticleRevealProps> = ({
     };
 
     // Grid configuration - dense, multi-colored dust
-    const spacing = mode === 'colorful-dust' ? 11 : mode === 'neon-hologram' ? 12 : 13;
+    const spacing = mode === 'colorful-dust' ? 32 : mode === 'neon-hologram' ? 38 : 42;
     const cols = Math.ceil(width / spacing);
     const rows = Math.ceil(height / spacing);
     const count = cols * rows;
 
     const currentPalette = PALETTES[mode];
     const paletteLength = currentPalette.length;
+
+    // Pre-render glowing blurred orbs to offscreen canvases for 60FPS fluid rendering
+    const orbCanvases = currentPalette.map(hex => {
+      const c = document.createElement('canvas');
+      const size = 120; // max resolution for the blurred orb
+      const center = size / 2;
+      c.width = size;
+      c.height = size;
+      const octx = c.getContext('2d')!;
+      
+      // Convert HEX to RGB for rgba() usage
+      let r = parseInt(hex.slice(1, 3), 16);
+      let g = parseInt(hex.slice(3, 5), 16);
+      let b = parseInt(hex.slice(5, 7), 16);
+      
+      const grad = octx.createRadialGradient(center, center, 0, center, center, center);
+      grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.9)`);
+      grad.addColorStop(0.3, `rgba(${r}, ${g}, ${b}, 0.5)`);
+      grad.addColorStop(0.7, `rgba(${r}, ${g}, ${b}, 0.1)`);
+      grad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+      
+      octx.fillStyle = grad;
+      octx.fillRect(0, 0, size, size);
+      return c;
+    });
 
     // High performance flat typed arrays for 0 GC frame drops
     const posX = new Float32Array(count);
@@ -136,14 +161,14 @@ export const ThreeParticleRevealCanvas: React.FC<ParticleRevealProps> = ({
     const dustRotations = new Float32Array(count);
     const dustRotSpeeds = new Float32Array(count);
 
-    // Initialize colorful dust particles
+    // Initialize liquid vapor particles
     let idx = 0;
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         if (idx >= count) break;
         // Organic organic jitter
-        const jx = (Math.random() - 0.5) * (spacing * 0.7);
-        const jy = (Math.random() - 0.5) * (spacing * 0.7);
+        const jx = (Math.random() - 0.5) * (spacing * 1.5);
+        const jy = (Math.random() - 0.5) * (spacing * 1.5);
         const x = c * spacing + spacing / 2 + jx;
         const y = r * spacing + spacing / 2 + jy;
 
@@ -154,12 +179,12 @@ export const ThreeParticleRevealCanvas: React.FC<ParticleRevealProps> = ({
         vx[idx] = 0;
         vy[idx] = 0;
 
-        // Dynamic dust particle sizing (tiny sparkling specs + medium glowing bokeh)
-        const isBokeh = Math.random() < 0.12;
-        const sz = isBokeh ? Math.random() * 2.8 + 2.0 : Math.random() * 1.6 + 0.9;
+        // Massive soft blurred orbs sizes
+        const isBokeh = Math.random() < 0.15;
+        const sz = isBokeh ? Math.random() * 45 + 25 : Math.random() * 25 + 15;
         sizes[idx] = sz;
         baseSizes[idx] = sz;
-        alphas[idx] = Math.random() * 0.45 + 0.55;
+        alphas[idx] = Math.random() * 0.4 + 0.3; // Softer initial opacity for liquid look
         phases[idx] = Math.random() * Math.PI * 2;
         colorIndices[idx] = Math.floor(Math.random() * paletteLength);
         dustRotations[idx] = Math.random() * Math.PI * 2;
@@ -277,7 +302,7 @@ export const ThreeParticleRevealCanvas: React.FC<ParticleRevealProps> = ({
         }
       }
 
-      // 3. Dynamic Colorful Dust Physics
+      // 3. Dynamic Liquid Vapor Physics
       for (let i = 0; i < totalParticles; i++) {
         const ox = originX[i];
         const oy = originY[i];
@@ -287,12 +312,16 @@ export const ThreeParticleRevealCanvas: React.FC<ParticleRevealProps> = ({
 
         dustRotations[i] += dustRotSpeeds[i];
 
-        // Atmospheric turbulence & floating dust motion
-        let floatX = Math.sin(time * 0.9 + phase) * 2.5 + Math.sin(oy * 0.015 + time) * 1.5;
-        let floatY = Math.cos(time * 0.8 + phase) * 2.5 + Math.cos(ox * 0.015 + time) * 1.5;
+        // Liquid vapor noise field
+        const timeScale = time * 0.2;
+        const noiseAngle = Math.sin(ox * 0.003 + timeScale) * Math.cos(oy * 0.004 + timeScale) * Math.PI * 2;
+        const noiseForce = Math.sin(ox * 0.01 + timeScale) * 35; // Wide sweeping drifts
+        
+        let floatX = Math.cos(noiseAngle) * noiseForce;
+        let floatY = Math.sin(noiseAngle) * noiseForce;
 
         if (mode === 'solar-flame') {
-          floatY -= Math.sin(time * 2 + phase) * 3; // Upward buoyant thermal drift
+          floatY -= Math.sin(time * 2 + phase) * 15; // Stronger upward buoyant thermal drift
         }
 
         const targetX = ox + floatX;
@@ -309,66 +338,74 @@ export const ThreeParticleRevealCanvas: React.FC<ParticleRevealProps> = ({
           const sdy = py - sw.y;
           const sDist = Math.sqrt(sdx * sdx + sdy * sdy);
           const ringDist = Math.abs(sDist - sw.radius);
-          if (ringDist < 45) {
-            const shockForce = (1 - ringDist / 45) * sw.strength * sw.alpha;
+          if (ringDist < 60) { // Wider shockwave impact
+            const shockForce = (1 - ringDist / 60) * sw.strength * sw.alpha * 1.5;
             const sAngle = Math.atan2(sdy, sdx);
             vx[i] += Math.cos(sAngle) * shockForce;
             vy[i] += Math.sin(sAngle) * shockForce;
           }
         }
 
-        // Mouse Dispersal & Vortex Swirl
+        // Mouse Fluid Vortex
         if (distSq < curRadiusSq) {
           const dist = Math.sqrt(distSq);
           const forceRatio = 1 - dist / curRadius;
-          const force = forceRatio * forceRatio * 32;
+          const force = forceRatio * forceRatio * 8; // Gentle liquid push
           const angle = Math.atan2(dy, dx);
 
-          // Dynamic angular swirl giving that magical whirlwind dusting effect
-          const swirlAngle = angle + 0.4 * forceRatio;
+          // Liquid vortex swirling tangent
+          const swirlAngle = angle + (Math.PI / 2) * forceRatio;
 
           vx[i] += Math.cos(swirlAngle) * force;
           vy[i] += Math.sin(swirlAngle) * force;
 
           const fade = dist / curRadius;
-          alphas[i] = fade * fade * 0.9;
-          sizes[i] = baseSizes[i] * (0.2 + fade * 0.8);
+          // Softly pulse opacity up when disturbed
+          alphas[i] = alphas[i] * 0.9 + (fade * 0.7) * 0.1;
+          sizes[i] = sizes[i] * 0.95 + (baseSizes[i] * 1.3) * 0.05;
         } else {
-          // Return to home position with gentle elastic damping
-          vx[i] += (targetX - px) * 0.1;
-          vy[i] += (targetY - py) * 0.1;
+          // Soft spring return
+          vx[i] += (targetX - px) * 0.015;
+          vy[i] += (targetY - py) * 0.015;
 
-          const twinkle = Math.sin(time * 2.5 + phase) * 0.2;
-          alphas[i] += (0.85 + twinkle - alphas[i]) * 0.12;
-          sizes[i] += (baseSizes[i] - sizes[i]) * 0.12;
+          const twinkle = Math.sin(time * 1.5 + phase) * 0.2;
+          alphas[i] += (0.4 + twinkle - alphas[i]) * 0.05;
+          sizes[i] += (baseSizes[i] - sizes[i]) * 0.05;
         }
 
-        vx[i] *= 0.82;
-        vy[i] *= 0.82;
+        vx[i] *= 0.91; // Very fluid, low friction
+        vy[i] *= 0.91;
 
         posX[i] += vx[i];
         posY[i] += vy[i];
       }
 
-      // 4. Batch Render Colorful Dust by Palette
-      for (let c = 0; c < paletteLength; c++) {
-        ctx.fillStyle = currentPalette[c];
-        ctx.beginPath();
-
-        for (let i = 0; i < totalParticles; i++) {
-          if (colorIndices[i] === c && alphas[i] > 0.03) {
-            const px = posX[i];
-            const py = posY[i];
-            const sz = sizes[i];
-
-            // Render rich circular dust motes
-            ctx.moveTo(px + sz, py);
-            ctx.arc(px, py, sz, 0, Math.PI * 2);
-          }
+      // 4. Render Liquid Orbs with Additive Blending (Screen)
+      ctx.globalCompositeOperation = 'screen';
+      
+      for (let i = 0; i < totalParticles; i++) {
+        if (alphas[i] > 0.02) {
+          const px = posX[i];
+          const py = posY[i];
+          const sz = sizes[i];
+          const colorIdx = colorIndices[i];
+          
+          ctx.globalAlpha = alphas[i];
+          
+          // Draw the pre-rendered glowing orb canvas centered on the particle
+          ctx.drawImage(
+            orbCanvases[colorIdx], 
+            px - sz, 
+            py - sz, 
+            sz * 2, 
+            sz * 2
+          );
         }
-
-        ctx.fill();
       }
+
+      // Reset composite operation for the wand cursor
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
 
       // 5. Interactive Magnetic Lens Wand Cursor
       if (!isIdle) {
@@ -412,7 +449,7 @@ export const ThreeParticleRevealCanvas: React.FC<ParticleRevealProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-[92vh] min-h-[640px] overflow-hidden select-none bg-[#08090e]"
+      className="relative w-full h-[calc(100vh-72px)] min-h-[640px] overflow-hidden select-none bg-[#08090e]"
     >
       {/* 1. Underlying High-Resolution Shubhashree Sahu Background Image */}
       <div className="absolute inset-0 z-0">
