@@ -93,18 +93,11 @@ export const ImageLightboxModal: React.FC<ImageLightboxModalProps> = ({
 
         {/* Left Side: Artwork Canvas */}
         <div className="lg:w-7/12 relative bg-[#100c09] flex items-center justify-center overflow-hidden min-h-[320px] lg:min-h-[540px]">
-          {(() => {
-            const isR2Rotated = item.imageUrl.includes('hero') || item.imageUrl.includes('Subhashree%20home%20page');
-            return (
-              <img
-                src={item.imageUrl}
-                alt={item.title}
-                className={`w-full h-full object-cover max-h-[70vh] lg:max-h-[85vh] filter contrast-105 ${
-                  isR2Rotated ? 'rotate-90 scale-[1.3]' : ''
-                }`}
-              />
-            );
-          })()}
+          <img
+            src={item.imageUrl}
+            alt={item.title}
+            className="w-full h-full object-cover max-h-[70vh] lg:max-h-[85vh] filter contrast-105"
+          />
 
           {/* Golden Spiral / Proportion Grid Overlay */}
           {showGoldenSpiral && (

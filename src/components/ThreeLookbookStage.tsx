@@ -62,10 +62,8 @@ export const ThreeLookbookStage: React.FC = () => {
     // 3D Rotating Card / Hologram Mesh
     const textureLoader = new THREE.TextureLoader();
     const cardTexture = textureLoader.load(activeLook.image);
-    cardTexture.center.set(0.5, 0.5);
-    cardTexture.rotation = -Math.PI / 2;
 
-    const cardGeometry = new THREE.PlaneGeometry(4.4, 2.8, 32, 32);
+    const cardGeometry = new THREE.PlaneGeometry(3.2, 4.4, 32, 32);
     const cardMaterial = new THREE.MeshPhysicalMaterial({
       map: cardTexture,
       side: THREE.DoubleSide,
@@ -80,7 +78,7 @@ export const ThreeLookbookStage: React.FC = () => {
     scene.add(cardMesh);
 
     // Glowing rim frame
-    const frameGeometry = new THREE.BoxGeometry(4.5, 2.9, 0.08);
+    const frameGeometry = new THREE.BoxGeometry(3.3, 4.5, 0.08);
     const frameMaterial = new THREE.MeshStandardMaterial({
       color: 0xf43f5e,
       metalness: 0.9,

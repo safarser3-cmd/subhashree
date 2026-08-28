@@ -64,8 +64,11 @@ export const ThreeParticleRevealCanvas: React.FC<ParticleRevealProps> = ({
   };
 
   return (
-    <div className="relative w-full h-[calc(100vh-72px)] min-h-[600px] overflow-hidden select-none bg-[#08090e] flex items-center justify-center">
-      {/* 1. Underlying High-Resolution Shubhashree Sahu Background Image (Rotated to Landscape) */}
+    <div
+      id="home"
+      className="relative w-full h-screen min-h-[600px] overflow-hidden select-none bg-[#08090e] flex items-center justify-center"
+    >
+      {/* 1. Underlying High-Resolution Shubhashree Sahu Background Image */}
       <div className="absolute inset-0 z-0 overflow-hidden flex items-center justify-center pointer-events-none">
         {/* Ambient atmospheric blur layer */}
         <img
@@ -79,10 +82,10 @@ export const ThreeParticleRevealCanvas: React.FC<ParticleRevealProps> = ({
               target.src = activePhoto.fallback;
             }
           }}
-          className="absolute w-[120vh] h-[120vw] max-w-none max-h-none object-cover blur-3xl opacity-40 scale-125 pointer-events-none transition-all duration-700 rotate-90"
+          className="absolute inset-0 w-full h-full object-cover blur-3xl opacity-40 scale-110 pointer-events-none transition-all duration-700"
         />
 
-        {/* Primary full-fidelity photo: rotated 90 degrees to landscape for widescreen fit */}
+        {/* Primary full-fidelity photo */}
         <img
           key={activePhoto.id}
           src={activePhoto.url}
@@ -93,13 +96,13 @@ export const ThreeParticleRevealCanvas: React.FC<ParticleRevealProps> = ({
               target.src = activePhoto.fallback;
             }
           }}
-          className="absolute w-[calc(100vh-72px)] h-[100vw] max-w-none max-h-none object-cover object-center filter brightness-105 contrast-105 transition-all duration-700 select-none rotate-90"
+          className="w-full h-full object-cover object-center filter brightness-105 contrast-105 transition-all duration-700 select-none"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0b0c10]/85 via-transparent to-[#0b0c10]/40 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0b0c10]/85 via-transparent to-transparent pointer-events-none" />
       </div>
 
       {/* 2. Top-left portrait info tag */}
-      <div className="absolute top-6 left-6 z-20 hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-xs text-rose-300 font-medium">
+      <div className="absolute top-24 left-6 z-20 hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-xs text-rose-300 font-medium shadow-lg">
         <Sparkles className="w-3.5 h-3.5 text-rose-400" />
         <span>{activePhoto.tag}</span>
         <span className="text-white/40">•</span>
@@ -139,7 +142,7 @@ export const ThreeParticleRevealCanvas: React.FC<ParticleRevealProps> = ({
                     target.src = photo.fallback;
                   }
                 }}
-                className="w-full h-full object-cover rotate-90 scale-125"
+                className="w-full h-full object-cover"
               />
             </button>
           ))}

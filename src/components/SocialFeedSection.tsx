@@ -711,15 +711,11 @@ export const SocialFeedSection: React.FC = () => {
                 {/* Media or Text Content */}
                 <div>
                   {post.mediaUrl && (
-                    <div className="relative h-80 w-full bg-black overflow-hidden flex items-center justify-center">
+                    <div className="relative h-80 w-full bg-black overflow-hidden">
                       <img
                         src={post.mediaUrl}
                         alt="Social Media Post Media"
-                        className={`w-full h-full object-cover ${
-                          post.mediaUrl.includes('hero') || post.mediaUrl.includes('Subhashree%20home%20page')
-                            ? 'rotate-90 scale-[1.3]'
-                            : ''
-                        }`}
+                        className="w-full h-full object-cover"
                       />
                     </div>
                   )}

@@ -38,9 +38,16 @@ export default function App() {
 
   const handleNavigate = (sectionId: string) => {
     setActiveSection(sectionId);
+    if (sectionId === 'home') {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+      return;
+    }
     const element = document.getElementById(sectionId);
     if (element) {
-      const navOffset = 80;
+      const navOffset = 72;
       const elementPosition = element.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - navOffset;
       window.scrollTo({
@@ -111,7 +118,7 @@ export default function App() {
       />
 
       {/* Main Fan Portal Modules */}
-      <main className="flex-1 w-full overflow-hidden pt-[72px]">
+      <main className="flex-1 w-full overflow-hidden">
         {/* Hero Influencer Showcase with Three.js & GSAP */}
         <HeroSection
           onExploreGallery={() => handleNavigate('gallery')}
