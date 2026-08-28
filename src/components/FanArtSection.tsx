@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { FanArtSubmission } from '../types';
-import { Palette, Heart, PlusCircle, Video, Feather, Sparkles, User, Share2, Check, ExternalLink } from 'lucide-react';
+import { Palette, Heart, PlusCircle, Video, Feather, Sparkles, User, Share2, Check, ExternalLink, LogIn, Star } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useAuthState, useSignInWithGoogle } from 'react-firebase-hooks/auth';
+import { auth } from '../lib/firebase';
+import { toggleFanArtFeaturedInFirestore } from '../lib/firestoreService';
 
 interface FanArtSectionProps {
   fanArts: FanArtSubmission[];
@@ -19,6 +22,10 @@ export const FanArtSection: React.FC<FanArtSectionProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [copiedArtId, setCopiedArtId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Auth hooks
+  const [user, loading] = useAuthState(auth);
+  const [signInWithGoogle, , loadingGoogle] = useSignInWithGoogle(auth);
 
   // Simulate loading for smoother experience
   React.useEffect(() => {
@@ -52,6 +59,15 @@ export const FanArtSection: React.FC<FanArtSectionProps> = ({
     setTimeout(() => setCopiedArtId(null), 2000);
   };
 
+  const handleToggleFeatured = async (art: FanArtSubmission, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (user?.email !== 'safarser3@gmail.com') {
+      alert("Only the administrator can feature artwork.");
+      return;
+    }
+    await toggleFanArtFeaturedInFirestore(art.id, !!art.isFeatured);
+  };
+
   return (
     <section id="fanart" className="py-20 bg-[#0e1017] relative border-t border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -71,14 +87,26 @@ export const FanArtSection: React.FC<FanArtSectionProps> = ({
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              id="fanart-section-submit-btn"
-              onClick={onOpenSubmitModal}
-              className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-sans text-xs font-bold tracking-wide shadow-xl shadow-rose-500/25 transition-all hover:scale-105 cursor-pointer flex items-center gap-2"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>Submit Your Artwork / Edit</span>
-            </button>
+            {user ? (
+              <button
+                id="fanart-section-submit-btn"
+                onClick={onOpenSubmitModal}
+                className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-sans text-xs font-bold tracking-wide shadow-xl shadow-rose-500/25 transition-all hover:scale-105 cursor-pointer flex items-center gap-2"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Submit Your Artwork / Edit</span>
+              </button>
+            ) : (
+              <button
+                id="fanart-section-login-btn"
+                onClick={() => signInWithGoogle()}
+                disabled={loading || loadingGoogle}
+                className="px-6 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-sans text-xs font-bold tracking-wide transition-all hover:scale-105 cursor-pointer flex items-center gap-2 border border-white/10"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>{loading || loadingGoogle ? 'Connecting...' : 'Sign in with Google to Submit'}</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -147,10 +175,15 @@ export const FanArtSection: React.FC<FanArtSectionProps> = ({
                         alt={art.title}
                         className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
                       />
-                      <div className="absolute top-3 left-3">
+                      <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
                         <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-black/70 backdrop-blur-md text-rose-300 border border-white/10">
                           {art.category}
                         </span>
+                        {art.size && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-white/20 backdrop-blur-md text-slate-100 border border-white/10 shadow-md">
+                            {art.size}
+                          </span>
+                        )}
                       </div>
                     </div>
                   ) : art.category === 'Video Edit & Reel' ? (
@@ -207,9 +240,22 @@ export const FanArtSection: React.FC<FanArtSectionProps> = ({
                   </div>
 
                   <div className="flex items-center gap-2">
+                    {user?.email === 'safarser3@gmail.com' && (
+                      <button
+                        onClick={(e) => handleToggleFeatured(art, e)}
+                        className={`p-2 rounded-xl transition-colors cursor-pointer ${
+                          art.isFeatured 
+                            ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30' 
+                            : 'bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white'
+                        }`}
+                        title={art.isFeatured ? "Unfeature" : "Feature in Gallery"}
+                      >
+                        <Star className={`w-3.5 h-3.5 ${art.isFeatured ? 'fill-amber-400' : ''}`} />
+                      </button>
+                    )}
                     <button
                       onClick={(e) => handleShare(art.id, e)}
-                      className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                      className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
                       title="Share artwork"
                     >
                       {copiedArtId === art.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}

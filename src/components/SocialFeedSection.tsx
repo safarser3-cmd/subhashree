@@ -1,6 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { SOCIAL_POSTS } from '../data/shubhashreeData';
 import { SocialPost } from '../types';
+import { subscribeToSocialPosts } from '../lib/firestoreService';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '../lib/firebase';
+
+declare global {
+  interface Window {
+    instgrm: any;
+  }
+}
+
+const AdminSocialUpload = lazy(() => import('./AdminSocialUpload'));
 import {
   Instagram,
   Youtube,
@@ -147,22 +158,27 @@ export const SocialFeedSection: React.FC = () => {
     }
   };
 
+  const [user] = useAuthState(auth);
+  const [posts, setPosts] = useState<SocialPost[]>([]);
+
   useEffect(() => {
     fetchLiveMetrics(false).finally(() => setIsProfilesLoading(false));
     
-    // Simulate initial post loading
-    const timer = setTimeout(() => setIsPostsLoading(false), 1500);
-    return () => clearTimeout(timer);
-  }, []);
+    const unsubscribe = subscribeToSocialPosts((data) => {
+      setPosts(data as SocialPost[]);
+      setIsPostsLoading(false);
+      // Let React render first, then process Instagram embeds
+      setTimeout(() => {
+        if (window.instgrm) {
+          window.instgrm.Embeds.process();
+        }
+      }, 500);
+    });
 
-  const [posts, setPosts] = useState<SocialPost[]>(() => {
-    try {
-      const saved = localStorage.getItem('shubhashree_social_posts');
-      return saved ? JSON.parse(saved) : SOCIAL_POSTS;
-    } catch {
-      return SOCIAL_POSTS;
-    }
-  });
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   const [likedPosts, setLikedPosts] = useState<Set<string>>(() => {
     try {
@@ -578,8 +594,14 @@ export const SocialFeedSection: React.FC = () => {
             </p>
           </div>
 
-          {/* Platform Filter Buttons (3 platforms only: Instagram, YouTube, X) */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {/* Platform Filter Buttons & Admin Upload */}
+          <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none">
+            {user?.email === 'safarser3@gmail.com' && (
+              <Suspense fallback={<div className="w-8 h-8 rounded-full border-2 border-emerald-500/50 border-t-transparent animate-spin" />}>
+                <AdminSocialUpload />
+              </Suspense>
+            )}
+            
             <button
               onClick={() => setSelectedPlatform('all')}
               className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
@@ -710,7 +732,7 @@ export const SocialFeedSection: React.FC = () => {
 
                 {/* Media or Text Content */}
                 <div>
-                  {post.mediaUrl && (
+                  {post.mediaUrl && post.mediaType !== 'video_embed' && (
                     <div className="relative h-80 w-full bg-black overflow-hidden">
                       <img
                         src={post.mediaUrl}
@@ -718,6 +740,13 @@ export const SocialFeedSection: React.FC = () => {
                         className="w-full h-full object-cover"
                       />
                     </div>
+                  )}
+
+                  {post.mediaType === 'video_embed' && post.mediaUrl && (
+                    <div 
+                      className="relative w-full bg-black/5 flex items-center justify-center overflow-hidden" 
+                      dangerouslySetInnerHTML={{ __html: post.mediaUrl }} 
+                    />
                   )}
 
                   <div className="p-5 space-y-3">

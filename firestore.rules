@@ -1,6 +1,12 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // Admin check function
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'safarser3@gmail.com';
+    }
+
     // Fan wall messages
     match /fan_messages/{messageId} {
       allow read: if true;
@@ -8,37 +14,56 @@ service cloud.firestore {
                     && request.resource.data.message is string
                     && request.resource.data.message.size() <= 1000;
       allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     // Site Stats (Love meter)
     match /site_stats/{statId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if true; // Keeping open for the increment love counter
     }
 
-    // Gallery media items
+    // Gallery media items (v1 & v2)
     match /gallery_media/{mediaId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /gallery_media_v2/{mediaId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // Fan Art
     match /fan_art/{artId} {
       allow read: if true;
-      allow write: if true;
+      
+      // Anyone can create if logged in, but they CANNOT set isFeatured to true themselves!
+      allow create: if request.auth != null && 
+                    (!request.resource.data.keys().hasAny(['isFeatured']) || request.resource.data.isFeatured == false || isAdmin());
+      
+      // Non-admins can only update 'likes'. Admins can update anything (like 'isFeatured').
+      allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])) || isAdmin();
+      
+      allow delete: if isAdmin();
     }
 
     // Business & Collaboration inquiries
     match /collaborations/{collabId} {
       allow create: if true;
-      allow read, update, delete: if true;
+      allow read, update, delete: if isAdmin();
     }
 
     // Live social metric snapshots
     match /social_snapshots/{snapshotId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if isAdmin();
+    }
+
+    // Social Posts
+    match /social_posts/{postId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }

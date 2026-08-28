@@ -4,7 +4,9 @@ export interface GalleryItem {
   category: 'Photoshoots' | 'Traditional Sarees' | 'Casual & Travel' | 'Red Carpet & Events' | 'Portraits';
   imageUrl: string;
   date: string;
-  aspectRatio?: string;
+  aspectRatio?: '9:16' | '16:9' | '1:1' | '4:5';
+  orientation?: 'mobile' | 'desktop' | 'square' | 'portrait';
+  resolution?: string; // e.g., '4K Ultra HD', '1080x1920', 'OLED QHD'
   caption: string;
   photographerOrLocation?: string;
   likes: number;
@@ -53,6 +55,7 @@ export interface FanArtSubmission {
   artistName: string;
   artistHandle?: string;
   category: 'Digital Illustration' | 'Pencil Sketch' | 'Video Edit & Reel' | 'Wallpaper & Graphic' | 'Poetry & Words';
+  size?: '9:16 (Mobile)' | '16:9 (Desktop)' | '1:1 (Instagram)' | '4:5 (Portrait)';
   imageUrl?: string;
   videoUrl?: string;
   textEssay?: string;

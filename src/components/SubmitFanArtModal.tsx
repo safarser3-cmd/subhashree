@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { FanArtSubmission } from '../types';
-import { X, Upload, Sparkles, Image, Video, Feather, CheckCircle2, Link } from 'lucide-react';
+import { X, Upload, Sparkles, Image, Video, Feather, CheckCircle2, Link, AlertCircle, LogIn } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useAuthState, useSignInWithGoogle } from 'react-firebase-hooks/auth';
+import { auth } from '../lib/firebase';
 
 interface SubmitFanArtModalProps {
   isOpen: boolean;
@@ -18,6 +20,7 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
   const [artistName, setArtistName] = useState('');
   const [artistHandle, setArtistHandle] = useState('');
   const [category, setCategory] = useState<FanArtSubmission['category']>('Digital Illustration');
+  const [size, setSize] = useState<FanArtSubmission['size']>('9:16 (Mobile)');
   const [imageUrl, setImageUrl] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [textEssay, setTextEssay] = useState('');
@@ -25,10 +28,16 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  const [error, setError] = useState<string | null>(null);
+
+  const [user, loadingAuth] = useAuthState(auth);
+  const [signInWithGoogle, , loadingGoogle] = useSignInWithGoogle(auth);
+
   useEffect(() => {
     if (!isOpen) return;
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    setError(null);
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -56,11 +65,12 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !artistName.trim()) return;
 
     setIsSubmitting(true);
+    setError(null);
 
     const fallbackImg =
       category === 'Digital Illustration'
@@ -75,6 +85,7 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
       artistName: artistName.trim(),
       artistHandle: artistHandle.trim() ? (artistHandle.startsWith('@') ? artistHandle : `@${artistHandle}`) : undefined,
       category,
+      size: ['Poetry & Words'].includes(category) ? undefined : size, // only set size for visual arts
       imageUrl: imageUrl || fallbackImg,
       videoUrl: videoUrl.trim() || undefined,
       textEssay: textEssay.trim() || undefined,
@@ -84,8 +95,8 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
       isFeatured: false
     };
 
-    setTimeout(() => {
-      onSubmit(newArt);
+    try {
+      await onSubmit(newArt);
       setIsSubmitting(false);
       setIsSuccess(true);
 
@@ -103,12 +114,16 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
         setTitle('');
         setArtistName('');
         setArtistHandle('');
+        setSize('9:16 (Mobile)');
         setImageUrl('');
         setVideoUrl('');
         setTextEssay('');
         setDescription('');
       }, 2000);
-    }, 600);
+    } catch (err) {
+      setIsSubmitting(false);
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    }
   };
 
   return (
@@ -146,7 +161,30 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
 
         {/* Content Body */}
         <div className="p-6 sm:p-8 overflow-y-auto">
-          {isSuccess ? (
+          {!user ? (
+            <div className="py-12 text-center space-y-6 animate-fade-in">
+              <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-full flex items-center justify-center mx-auto shadow-xl">
+                <LogIn className="w-8 h-8 text-rose-400" />
+              </div>
+              <div>
+                <h4 className="font-syne text-2xl font-bold text-white mb-2">
+                  Sign In Required
+                </h4>
+                <p className="font-sans text-sm text-slate-300 mb-6">
+                  Sign in with Google to submit post/artwork. This protects our community from spam.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => signInWithGoogle()}
+                  disabled={loadingAuth || loadingGoogle}
+                  className="px-6 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-sans text-xs font-bold tracking-wide transition-all hover:scale-105 cursor-pointer flex items-center gap-2 border border-white/10 mx-auto"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>{loadingAuth || loadingGoogle ? 'Connecting...' : 'Sign in with Google to Continue'}</span>
+                </button>
+              </div>
+            </div>
+          ) : isSuccess ? (
             <div className="py-12 text-center space-y-3 animate-fade-in">
               <CheckCircle2 className="w-16 h-16 text-rose-400 mx-auto animate-bounce" />
               <h4 className="font-syne text-2xl font-bold text-white">
@@ -158,6 +196,13 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="p-3 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center gap-2 text-rose-300 text-xs">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>{error}</span>
+                </div>
+              )}
+
               {/* Category Selector */}
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-2">
@@ -188,6 +233,38 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
                   ))}
                 </div>
               </div>
+
+              {/* Size Selector */}
+              {category !== 'Poetry & Words' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-2">
+                    Artwork Size / Orientation *
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(
+                      [
+                        '9:16 (Mobile)',
+                        '16:9 (Desktop)',
+                        '1:1 (Instagram)',
+                        '4:5 (Portrait)'
+                      ] as FanArtSubmission['size'][]
+                    ).map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setSize(s)}
+                        className={`p-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer text-left truncate ${
+                          size === s
+                            ? 'bg-rose-500 text-white border-rose-500 shadow-md'
+                            : 'bg-white/5 border-white/10 text-slate-300 hover:border-white/20'
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Title & Artist */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

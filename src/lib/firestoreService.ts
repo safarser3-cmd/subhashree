@@ -11,7 +11,7 @@ import {
   getDoc,
   increment 
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, auth } from './firebase';
 import { FanMessage, FanArtSubmission, GalleryItem, SocialPost } from '../types';
 import { INITIAL_FAN_MESSAGES, INITIAL_FAN_ART, GALLERY_ITEMS, SOCIAL_POSTS } from '../data/shubhashreeData';
 
@@ -138,14 +138,20 @@ export const incrementLoveCountInFirestore = async () => {
 // --- GALLERY ITEMS ---
 export const subscribeToGalleryItems = (callback: (items: GalleryItem[]) => void) => {
   try {
-    const colRef = collection(db, 'gallery_media');
+    const colRef = collection(db, 'gallery_media_v2');
     return onSnapshot(colRef, async (snap) => {
       if (snap.empty) {
-        // Seed
-        for (const item of GALLERY_ITEMS) {
-          await setDoc(doc(db, 'gallery_media', item.id), item);
-        }
+        // Fallback
         callback(GALLERY_ITEMS);
+        if (auth.currentUser?.email === 'safarser3@gmail.com') {
+          try {
+            for (const item of GALLERY_ITEMS) {
+              await setDoc(doc(db, 'gallery_media_v2', item.id), item);
+            }
+          } catch (e) {
+            console.warn('Could not seed gallery', e);
+          }
+        }
       } else {
         const items = snap.docs.map(d => ({ id: d.id, ...d.data() })) as GalleryItem[];
         callback(items);
@@ -156,6 +162,18 @@ export const subscribeToGalleryItems = (callback: (items: GalleryItem[]) => void
   } catch {
     callback(GALLERY_ITEMS);
     return () => {};
+  }
+};
+
+export const addGalleryItemInFirestore = async (item: GalleryItem) => {
+  try {
+    const cleanItem = Object.fromEntries(
+      Object.entries(item).filter(([_, v]) => v !== undefined)
+    );
+    await setDoc(doc(db, 'gallery_media_v2', item.id), cleanItem);
+  } catch (e) {
+    console.error('Error adding gallery item:', e);
+    throw new Error('Failed to upload. Are you logged in as admin?');
   }
 };
 
@@ -260,10 +278,16 @@ export const subscribeToFanArt = (callback: (arts: FanArtSubmission[]) => void) 
     const colRef = collection(db, 'fan_art');
     return onSnapshot(colRef, async (snap) => {
       if (snap.empty) {
-        for (const art of INITIAL_FAN_ART) {
-          await setDoc(doc(db, 'fan_art', art.id), art);
-        }
         callback(INITIAL_FAN_ART);
+        if (auth.currentUser?.email === 'safarser3@gmail.com') {
+          try {
+            for (const art of INITIAL_FAN_ART) {
+              await setDoc(doc(db, 'fan_art', art.id), art);
+            }
+          } catch (e) {
+            console.warn('Could not seed fan art', e);
+          }
+        }
       } else {
         const arts = snap.docs.map(d => ({ id: d.id, ...d.data() })) as FanArtSubmission[];
         callback(arts);
@@ -281,12 +305,14 @@ export const subscribeToFanArt = (callback: (arts: FanArtSubmission[]) => void) 
 
 export const addFanArtToFirestore = async (art: FanArtSubmission) => {
   try {
-    await setDoc(doc(db, 'fan_art', art.id), art);
+    // Firestore does not support undefined values. Filter them out.
+    const cleanArt = Object.fromEntries(
+      Object.entries(art).filter(([_, v]) => v !== undefined)
+    );
+    await setDoc(doc(db, 'fan_art', art.id), cleanArt);
   } catch (e) {
     console.error('Error adding fan art to Firestore:', e);
-    const saved = localStorage.getItem('shubhashree_fan_arts_v2');
-    const existing = saved ? JSON.parse(saved) : INITIAL_FAN_ART;
-    localStorage.setItem('shubhashree_fan_arts_v2', JSON.stringify([art, ...existing]));
+    throw new Error('Failed to upload artwork. Please ensure you are logged in.');
   }
 };
 
@@ -298,3 +324,59 @@ export const likeFanArtInFirestore = async (id: string, currentLikes: number) =>
     console.error('Error liking fan art:', e);
   }
 };
+
+export const toggleFanArtFeaturedInFirestore = async (id: string, isCurrentlyFeatured: boolean) => {
+  try {
+    const ref = doc(db, 'fan_art', id);
+    await updateDoc(ref, { isFeatured: !isCurrentlyFeatured });
+  } catch (e) {
+    console.error('Error toggling featured status:', e);
+  }
+};
+
+export const subscribeToSocialPosts = (callback: (posts: any[]) => void) => {
+  try {
+    const colRef = collection(db, 'social_posts');
+    return onSnapshot(colRef, async (snap) => {
+      if (snap.empty) {
+        // Fallback to static posts if empty
+        const initialPosts = SOCIAL_POSTS;
+        callback(initialPosts);
+        
+        // Only attempt to seed if we have the admin email loaded
+        if (auth.currentUser?.email === 'safarser3@gmail.com') {
+          try {
+            for (const post of initialPosts) {
+              await setDoc(doc(db, 'social_posts', post.id), post);
+            }
+          } catch (e) {
+            console.warn('Silent fallback: Could not seed social posts to Firestore', e);
+          }
+        }
+      } else {
+        const posts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        callback(posts);
+      }
+    }, (error) => {
+      console.error('Error fetching social posts:', error);
+      callback(SOCIAL_POSTS);
+    });
+  } catch (error) {
+    console.error('Error subscribing to social posts:', error);
+    callback(SOCIAL_POSTS);
+    return () => {};
+  }
+};
+
+export const addSocialPostToFirestore = async (post: any) => {
+  try {
+    const cleanPost = Object.fromEntries(
+      Object.entries(post).filter(([_, v]) => v !== undefined)
+    );
+    await setDoc(doc(db, 'social_posts', post.id), cleanPost);
+  } catch (e) {
+    console.error('Error adding social post to Firestore:', e);
+    throw new Error('Failed to add post. Are you logged in as admin?');
+  }
+};
+
