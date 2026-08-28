@@ -10,26 +10,28 @@ interface LookbookItem {
   color: string;
 }
 
+const R2_BASE = 'https://pub-f5a2d26958f94a9692b716b327178122.r2.dev/Subhashree%20home%20page';
+
 const SPOTLIGHT_LOOKS: LookbookItem[] = [
   {
     id: '1',
     title: 'Sambalpuri Silk Ikat Elegance',
     tag: 'Heritage Drapes',
-    image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80',
+    image: `${R2_BASE}/hero1.jpg`,
     color: '#f43f5e',
   },
   {
     id: '2',
     title: 'Sunset Velvet Red Carpet',
     tag: 'Glamour Gala',
-    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+    image: `${R2_BASE}/hero2.jpg`,
     color: '#fb7185',
   },
   {
     id: '3',
     title: 'Golden Hour Temple Sanctuary',
     tag: 'Spiritual Grace',
-    image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+    image: `${R2_BASE}/hero3.jpg`,
     color: '#f59e0b',
   },
 ];
@@ -60,8 +62,10 @@ export const ThreeLookbookStage: React.FC = () => {
     // 3D Rotating Card / Hologram Mesh
     const textureLoader = new THREE.TextureLoader();
     const cardTexture = textureLoader.load(activeLook.image);
+    cardTexture.center.set(0.5, 0.5);
+    cardTexture.rotation = -Math.PI / 2;
 
-    const cardGeometry = new THREE.PlaneGeometry(3.2, 4.4, 32, 32);
+    const cardGeometry = new THREE.PlaneGeometry(4.4, 2.8, 32, 32);
     const cardMaterial = new THREE.MeshPhysicalMaterial({
       map: cardTexture,
       side: THREE.DoubleSide,
@@ -76,7 +80,7 @@ export const ThreeLookbookStage: React.FC = () => {
     scene.add(cardMesh);
 
     // Glowing rim frame
-    const frameGeometry = new THREE.BoxGeometry(3.3, 4.5, 0.08);
+    const frameGeometry = new THREE.BoxGeometry(4.5, 2.9, 0.08);
     const frameMaterial = new THREE.MeshStandardMaterial({
       color: 0xf43f5e,
       metalness: 0.9,

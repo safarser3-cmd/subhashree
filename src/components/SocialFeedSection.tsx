@@ -673,6 +673,9 @@ export const SocialFeedSection: React.FC = () => {
                     <div className="relative">
                       <img
                         src="/assets/avatar.jpg"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = 'https://iili.io/CmQCdAl.jpg';
+                        }}
                         alt={post.authorName}
                         className="w-11 h-11 rounded-full object-cover border border-rose-500/40"
                       />
@@ -708,11 +711,15 @@ export const SocialFeedSection: React.FC = () => {
                 {/* Media or Text Content */}
                 <div>
                   {post.mediaUrl && (
-                    <div className="relative h-80 w-full bg-black overflow-hidden">
+                    <div className="relative h-80 w-full bg-black overflow-hidden flex items-center justify-center">
                       <img
                         src={post.mediaUrl}
                         alt="Social Media Post Media"
-                        className="w-full h-full object-cover"
+                        className={`w-full h-full object-cover ${
+                          post.mediaUrl.includes('hero') || post.mediaUrl.includes('Subhashree%20home%20page')
+                            ? 'rotate-90 scale-[1.3]'
+                            : ''
+                        }`}
                       />
                     </div>
                   )}

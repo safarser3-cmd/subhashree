@@ -182,6 +182,7 @@ export const GallerySection: React.FC = () => {
             {filteredItems.map((item) => {
               const isLiked = likedIds.has(item.id);
               const totalLikes = item.likes + (isLiked ? 1 : 0);
+              const isR2Rotated = item.imageUrl.includes('hero') || item.imageUrl.includes('Subhashree%20home%20page');
 
               return (
                 <div
@@ -191,11 +192,13 @@ export const GallerySection: React.FC = () => {
                   className="group relative rounded-3xl overflow-hidden glass-panel border border-white/10 hover:border-rose-500/50 shadow-xl hover:shadow-2xl hover:shadow-rose-500/10 transition-all duration-300 cursor-pointer flex flex-col"
                 >
                   {/* Image Container */}
-                  <div className="relative h-72 w-full overflow-hidden bg-slate-900">
+                  <div className="relative h-72 w-full overflow-hidden bg-slate-900 flex items-center justify-center">
                     <img
                       src={item.imageUrl}
                       alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
+                      className={`w-full h-full object-cover group-hover:scale-108 transition-transform duration-500 ${
+                        isR2Rotated ? 'rotate-90 scale-[1.35] group-hover:scale-[1.45]' : ''
+                      }`}
                     />
 
                     {/* Gradient Overlay */}

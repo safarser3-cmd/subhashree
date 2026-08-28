@@ -39,7 +39,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-rose-500 via-pink-500 to-amber-400 p-[2px] shadow-lg shadow-rose-500/20 group-hover:scale-105 transition-transform overflow-hidden shrink-0">
               <img
+                id="nav-brand-logo-img"
                 src="/assets/avatar.jpg"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = 'https://iili.io/CmQCdAl.jpg';
+                }}
                 alt="Shubhashree Sahu"
                 className="w-full h-full rounded-full object-cover object-center"
               />
