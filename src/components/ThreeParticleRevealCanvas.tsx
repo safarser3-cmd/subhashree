@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, ChevronLeft, ChevronRight, ArrowRight, Image as ImageIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight, Image as ImageIcon } from 'lucide-react';
 
 interface ParticleRevealProps {
   currentImageIndex?: number;
@@ -101,15 +101,7 @@ export const ThreeParticleRevealCanvas: React.FC<ParticleRevealProps> = ({
         <div className="absolute inset-0 bg-gradient-to-t from-[#0b0c10]/85 via-transparent to-transparent pointer-events-none" />
       </div>
 
-      {/* 2. Top-left portrait info tag */}
-      <div className="absolute top-24 left-6 z-20 hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-xs text-rose-300 font-medium shadow-lg">
-        <Sparkles className="w-3.5 h-3.5 text-rose-400" />
-        <span>{activePhoto.tag}</span>
-        <span className="text-white/40">•</span>
-        <span className="text-white">{activePhoto.name}</span>
-      </div>
-
-      {/* 3. Bottom Controls & Photo Switcher */}
+      {/* Bottom Controls & Photo Switcher */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-wrap items-center justify-center gap-3 px-4 py-2.5 w-[95vw] sm:w-auto rounded-3xl sm:rounded-full glass-panel bg-black/60 backdrop-blur-xl border border-white/15 shadow-2xl">
         {/* Prev Arrow */}
         <button
