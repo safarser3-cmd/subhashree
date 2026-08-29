@@ -27,7 +27,7 @@ export const FanArtSection: React.FC<FanArtSectionProps> = ({
   const [user, loading] = useAuthState(auth);
   const [signInWithGoogle, , loadingGoogle] = useSignInWithGoogle(auth);
 
-  // Simulate loading for smoother experience
+  // Give the Firestore subscription time to provide the first result.
   React.useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1500);
     return () => clearTimeout(timer);
@@ -155,6 +155,12 @@ export const FanArtSection: React.FC<FanArtSectionProps> = ({
                 </div>
               </div>
             ))
+          ) : filteredArts.length === 0 ? (
+            <div className="col-span-full glass-panel rounded-3xl border border-white/10 p-12 text-center">
+              <Palette className="mx-auto mb-4 h-10 w-10 text-rose-400" />
+              <h3 className="font-syne text-xl font-bold text-white">No community creations yet</h3>
+              <p className="mt-2 text-sm text-slate-400">Be the first fan to share an artwork, edit, or poem.</p>
+            </div>
           ) : (
             filteredArts.map((art) => {
               const isLiked = likedArtIds.has(art.id);

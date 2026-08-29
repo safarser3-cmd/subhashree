@@ -1,4 +1,4 @@
-import { GalleryItem, NewsItem, SocialPost, FanArtSubmission, FanMessage } from '../types';
+import { GalleryItem, NewsItem, SocialPost, FanMessage } from '../types';
 
 export const INFLUENCER_PROFILE = {
   name: 'Shubhashree Sahu',
@@ -87,61 +87,6 @@ export const SOCIAL_POSTS: SocialPost[] = [
     sharesCount: 0,
     tags: ['#RecentPost', '#InstagramReel'],
     comments: []
-  }
-];
-
-export const INITIAL_FAN_ART: FanArtSubmission[] = [
-  {
-    id: 'art-1',
-    title: 'Golden Sunset Glow Vector Art',
-    artistName: 'Sneha Patel',
-    artistHandle: '@sneha_vectorart',
-    category: 'Digital Illustration',
-    imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=1000&q=80',
-    description: 'A vibrant digital portrait blending synthwave warm sunset tones with Shubhashree’s iconic smile and traditional silver jhumkas.',
-    submittedAt: '2 days ago',
-    likes: 840,
-    isFeatured: true
-  },
-  {
-    id: 'art-2',
-    title: 'Charcoal & Graphite Portrait Study',
-    artistName: 'Arjun Das',
-    artistHandle: '@arjun_sketches',
-    category: 'Pencil Sketch',
-    imageUrl: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1000&q=80',
-    description: 'A realistic 8B graphite pencil sketch focusing on her eyes, gentle expression, and handloom saree drape textures.',
-    submittedAt: '4 days ago',
-    likes: 1210,
-    isFeatured: true
-  },
-  {
-    id: 'art-3',
-    title: 'Cinematic 4K Video Edit & Tribute Reel',
-    artistName: 'Rohan Edits FX',
-    artistHandle: '@rohan_vfx_edits',
-    category: 'Video Edit & Reel',
-    videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-    description: 'A smooth, fast-paced transition edit sync’d to ambient lo-fi beats showcasing her top 2024 fashion looks and smile moments.',
-    submittedAt: '1 week ago',
-    likes: 1950,
-    isFeatured: true
-  },
-  {
-    id: 'art-4',
-    title: 'Words of Admiration: The Light You Share',
-    artistName: 'Tanvi Mohanty',
-    artistHandle: '@tanvi_poetry',
-    category: 'Poetry & Words',
-    textEssay: `In every frame, a gentle grace she weaves,
-Like sunlight dancing through the autumn leaves.
-With humble heart and roots running deep,
-A legacy of kindness that our hearts will keep.
-Shine on, Shubhashree — inspiring dreamers near and far!`,
-    description: 'A heartfelt community tribute poem celebrating her authenticity, smile, and positive impact.',
-    submittedAt: '2 weeks ago',
-    likes: 670,
-    isFeatured: false
   }
 ];
 

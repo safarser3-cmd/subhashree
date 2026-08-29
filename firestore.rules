@@ -40,7 +40,32 @@ service cloud.firestore {
       
       // Anyone can create if logged in, but they CANNOT set isFeatured to true themselves!
       allow create: if request.auth != null && 
-                    (!request.resource.data.keys().hasAny(['isFeatured']) || request.resource.data.isFeatured == false || isAdmin());
+              request.resource.data.keys().hasOnly([
+                'id', 'title', 'artistName', 'artistHandle', 'category', 'size',
+                'imageUrl', 'videoUrl', 'textEssay', 'description', 'submittedAt',
+                'likes', 'isFeatured'
+              ])
+              && request.resource.data.id is string
+              && request.resource.data.id.size() <= 80
+              && request.resource.data.title is string
+              && request.resource.data.title.size() <= 160
+              && request.resource.data.artistName is string
+              && request.resource.data.artistName.size() <= 120
+              && request.resource.data.description is string
+              && request.resource.data.description.size() <= 2000
+              && (!request.resource.data.keys().hasAny(['imageUrl'])
+                || (request.resource.data.imageUrl is string
+                  && request.resource.data.imageUrl.size() <= 2048
+                  && request.resource.data.imageUrl.matches('https://.*')))
+              && (!request.resource.data.keys().hasAny(['videoUrl'])
+                || (request.resource.data.videoUrl is string
+                  && request.resource.data.videoUrl.size() <= 2048
+                  && request.resource.data.videoUrl.matches('https://.*')))
+              && (!request.resource.data.keys().hasAny(['textEssay'])
+                || (request.resource.data.textEssay is string
+                  && request.resource.data.textEssay.size() <= 5000))
+              && (!request.resource.data.keys().hasAny(['isFeatured']) || request.resource.data.isFeatured == false || isAdmin())
+              && request.resource.data.likes == 1;
       
       // Non-admins can only update 'likes'. Admins can update anything (like 'isFeatured').
       allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])) || isAdmin();
@@ -64,6 +89,18 @@ service cloud.firestore {
     match /social_posts/{postId} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    // Instagram embeds store only the public post URL.
+    match /instagramPosts/{postId} {
+      allow read: if true;
+      allow create: if isAdmin()
+                    && request.resource.data.keys().hasOnly(['postUrl', 'addedAt'])
+                    && request.resource.data.postUrl is string;
+      allow update: if isAdmin()
+                    && request.resource.data.keys().hasOnly(['postUrl', 'addedAt'])
+                    && request.resource.data.postUrl is string;
+      allow delete: if isAdmin();
     }
   }
 }

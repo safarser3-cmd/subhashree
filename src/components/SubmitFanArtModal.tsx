@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FanArtSubmission } from '../types';
-import { X, Upload, Sparkles, Image, Video, Feather, CheckCircle2, Link, AlertCircle, LogIn } from 'lucide-react';
+import { X, Sparkles, Image, Video, Feather, CheckCircle2, Link, AlertCircle, LogIn } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuthState, useSignInWithGoogle } from 'react-firebase-hooks/auth';
 import { auth } from '../lib/firebase';
@@ -27,6 +27,7 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [lastSubmissionAt, setLastSubmissionAt] = useState(0);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -54,30 +55,24 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImageUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !artistName.trim()) return;
+    if (Date.now() - lastSubmissionAt < 60000) {
+      setError('Please wait one minute before submitting another artwork.');
+      return;
+    }
+    if (imageUrl && !imageUrl.startsWith('https://')) {
+      setError('Artwork images must use a public HTTPS URL from Cloudflare R2.');
+      return;
+    }
+    if (imageUrl.length > 2048 || videoUrl.length > 2048) {
+      setError('Media URLs must be 2048 characters or shorter.');
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
-
-    const fallbackImg =
-      category === 'Digital Illustration'
-        ? 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=1000&q=80'
-        : category === 'Pencil Sketch'
-        ? 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1000&q=80'
-        : undefined;
 
     const newArt: FanArtSubmission = {
       id: `fanart-${Date.now()}`,
@@ -86,7 +81,7 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
       artistHandle: artistHandle.trim() ? (artistHandle.startsWith('@') ? artistHandle : `@${artistHandle}`) : undefined,
       category,
       size: ['Poetry & Words'].includes(category) ? undefined : size, // only set size for visual arts
-      imageUrl: imageUrl || fallbackImg,
+      imageUrl: imageUrl || undefined,
       videoUrl: videoUrl.trim() || undefined,
       textEssay: textEssay.trim() || undefined,
       description: description.trim() || 'A creative fan homage celebrating Shubhashree Sahu.',
@@ -97,6 +92,7 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
 
     try {
       await onSubmit(newArt);
+      setLastSubmissionAt(Date.now());
       setIsSubmitting(false);
       setIsSuccess(true);
 
@@ -343,29 +339,14 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
                   <label className="block text-xs font-bold text-slate-300">
                     Upload Image or Paste Image URL
                   </label>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <label className="flex-1 border-2 border-dashed border-white/15 hover:border-rose-500/50 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition-colors text-center">
-                      <Upload className="w-6 h-6 text-rose-400 mb-1" />
-                      <span className="text-xs font-bold text-slate-200">Select File</span>
-                      <span className="text-[10px] text-slate-400">PNG, JPG up to 10MB</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageFile}
-                        className="hidden"
-                      />
-                    </label>
-
-                    <div className="flex-1 flex flex-col justify-center">
-                      <input
-                        type="url"
-                        placeholder="Or paste image URL"
-                        value={imageUrl}
-                        onChange={(e) => setImageUrl(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500"
-                      />
-                    </div>
-                  </div>
+                  <div>
+                    <input
+                      type="url"
+                      placeholder="https://pub-...r2.dev/..."
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500"
+                    />
 
                   {imageUrl && (
                     <div className="mt-2 h-28 w-full rounded-xl overflow-hidden bg-black relative border border-white/10">

@@ -9,11 +9,12 @@ import {
   onSnapshot,
   setDoc,
   getDoc,
-  increment 
+  increment,
+  serverTimestamp
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import { FanMessage, FanArtSubmission, GalleryItem, SocialPost } from '../types';
-import { INITIAL_FAN_MESSAGES, INITIAL_FAN_ART, GALLERY_ITEMS, SOCIAL_POSTS } from '../data/shubhashreeData';
+import { INITIAL_FAN_MESSAGES, GALLERY_ITEMS, SOCIAL_POSTS } from '../data/shubhashreeData';
 
 // --- FAN MESSAGES ---
 export const subscribeToFanMessages = (callback: (messages: FanMessage[]) => void) => {
@@ -276,29 +277,18 @@ export const updateBioInFirestore = async (newBio: BioContent) => {
 export const subscribeToFanArt = (callback: (arts: FanArtSubmission[]) => void) => {
   try {
     const colRef = collection(db, 'fan_art');
-    return onSnapshot(colRef, async (snap) => {
+    return onSnapshot(colRef, (snap) => {
       if (snap.empty) {
-        callback(INITIAL_FAN_ART);
-        if (auth.currentUser?.email === 'safarser3@gmail.com') {
-          try {
-            for (const art of INITIAL_FAN_ART) {
-              await setDoc(doc(db, 'fan_art', art.id), art);
-            }
-          } catch (e) {
-            console.warn('Could not seed fan art', e);
-          }
-        }
+        callback([]);
       } else {
         const arts = snap.docs.map(d => ({ id: d.id, ...d.data() })) as FanArtSubmission[];
         callback(arts);
       }
     }, () => {
-      const saved = localStorage.getItem('shubhashree_fan_arts_v2');
-      callback(saved ? JSON.parse(saved) : INITIAL_FAN_ART);
+      callback([]);
     });
   } catch {
-    const saved = localStorage.getItem('shubhashree_fan_arts_v2');
-    callback(saved ? JSON.parse(saved) : INITIAL_FAN_ART);
+    callback([]);
     return () => {};
   }
 };
@@ -368,15 +358,41 @@ export const subscribeToSocialPosts = (callback: (posts: any[]) => void) => {
   }
 };
 
-export const addSocialPostToFirestore = async (post: any) => {
+export interface InstagramPost {
+  id: string;
+  postUrl: string;
+  addedAt?: unknown;
+}
+
+export const subscribeToInstagramPosts = (callback: (posts: InstagramPost[]) => void) => {
   try {
-    const cleanPost = Object.fromEntries(
-      Object.entries(post).filter(([_, v]) => v !== undefined)
-    );
-    await setDoc(doc(db, 'social_posts', post.id), cleanPost);
-  } catch (e) {
-    console.error('Error adding social post to Firestore:', e);
-    throw new Error('Failed to add post. Are you logged in as admin?');
+    return onSnapshot(collection(db, 'instagramPosts'), (snapshot) => {
+      const posts = snapshot.docs.map((post) => ({
+        id: post.id,
+        ...post.data()
+      })) as InstagramPost[];
+      callback(
+        posts
+          .filter((post) => typeof post.postUrl === 'string' && post.postUrl.length > 0)
+          .sort((left, right) => String(right.addedAt ?? '').localeCompare(String(left.addedAt ?? '')))
+      );
+    }, (error) => {
+      console.error('Error fetching Instagram posts:', error);
+      callback([]);
+    });
+  } catch (error) {
+    console.error('Error subscribing to Instagram posts:', error);
+    callback([]);
+    return () => {};
   }
+};
+
+export const addInstagramPostToFirestore = async (postUrl: string) => {
+  const postRef = doc(collection(db, 'instagramPosts'));
+  await setDoc(postRef, {
+    postUrl,
+    addedAt: serverTimestamp()
+  });
+  return postRef.id;
 };
 

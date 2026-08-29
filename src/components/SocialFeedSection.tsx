@@ -1,17 +1,57 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { SOCIAL_POSTS } from '../data/shubhashreeData';
+import React, { useState, useEffect } from 'react';
 import { SocialPost } from '../types';
-import { subscribeToSocialPosts } from '../lib/firestoreService';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from '../lib/firebase';
+import { InstagramPost, subscribeToInstagramPosts, subscribeToSocialPosts } from '../lib/firestoreService';
+import { InstagramEmbed } from './InstagramEmbed';
 
 declare global {
   interface Window {
     instgrm: any;
+    twttr?: {
+      widgets?: {
+        load: (element?: HTMLElement) => void;
+      };
+    };
   }
 }
 
-const AdminSocialUpload = lazy(() => import('./AdminSocialUpload'));
+let xWidgetsPromise: Promise<void> | null = null;
+
+const loadXWidgets = () => {
+  if (window.twttr?.widgets) return Promise.resolve();
+  if (xWidgetsPromise) return xWidgetsPromise;
+
+  xWidgetsPromise = new Promise<void>((resolve, reject) => {
+    const script = document.querySelector<HTMLScriptElement>('script[src*="platform.x.com/widgets.js"]');
+    if (!script) {
+      reject(new Error('X widgets script is missing.'));
+      return;
+    }
+
+    let attempts = 0;
+    const checkReady = () => {
+      if (window.twttr?.widgets) {
+        resolve();
+        return;
+      }
+      attempts += 1;
+      if (attempts >= 100) {
+        reject(new Error('X widgets script did not initialize.'));
+        return;
+      }
+      window.setTimeout(checkReady, 100);
+    };
+
+    script.addEventListener('load', checkReady, { once: true });
+    script.addEventListener('error', () => reject(new Error('X widgets script failed to load.')), { once: true });
+    checkReady();
+  }).catch((error) => {
+    xWidgetsPromise = null;
+    throw error;
+  });
+
+  return xWidgetsPromise;
+};
+
 import {
   Instagram,
   Youtube,
@@ -109,7 +149,7 @@ const INITIAL_PROFILES: SocialProfileCard[] = [
 ];
 
 export const SocialFeedSection: React.FC = () => {
-  const [selectedPlatform, setSelectedPlatform] = useState<string>('all');
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('instagram');
   const [profiles, setProfiles] = useState<SocialProfileCard[]>(INITIAL_PROFILES);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isProfilesLoading, setIsProfilesLoading] = useState(true);
@@ -158,27 +198,31 @@ export const SocialFeedSection: React.FC = () => {
     }
   };
 
-  const [user] = useAuthState(auth);
   const [posts, setPosts] = useState<SocialPost[]>([]);
+  const [instagramPosts, setInstagramPosts] = useState<InstagramPost[]>([]);
 
   useEffect(() => {
     fetchLiveMetrics(false).finally(() => setIsProfilesLoading(false));
     
     const unsubscribe = subscribeToSocialPosts((data) => {
-      setPosts(data as SocialPost[]);
+      setPosts((data as SocialPost[]).filter((post) => post.platform !== 'instagram'));
       setIsPostsLoading(false);
-      // Let React render first, then process Instagram embeds
-      setTimeout(() => {
-        if (window.instgrm) {
-          window.instgrm.Embeds.process();
-        }
-      }, 500);
     });
+    const unsubscribeInstagram = subscribeToInstagramPosts(setInstagramPosts);
 
     return () => {
       unsubscribe();
+      unsubscribeInstagram();
     };
   }, []);
+
+  useEffect(() => {
+    if (selectedPlatform !== 'twitter' || !posts.some((post) => post.platform === 'twitter')) return;
+
+    loadXWidgets()
+      .then(() => window.twttr?.widgets?.load())
+      .catch(() => {});
+  }, [posts, selectedPlatform]);
 
   const [likedPosts, setLikedPosts] = useState<Set<string>>(() => {
     try {
@@ -270,9 +314,8 @@ export const SocialFeedSection: React.FC = () => {
   };
 
   const filteredPosts = posts.filter(
-    (p) => selectedPlatform === 'all' || p.platform === selectedPlatform
+    (p) => p.platform === selectedPlatform
   );
-
   const getPlatformIcon = (platform: SocialPost['platform']) => {
     switch (platform) {
       case 'instagram':
@@ -594,24 +637,8 @@ export const SocialFeedSection: React.FC = () => {
             </p>
           </div>
 
-          {/* Platform Filter Buttons & Admin Upload */}
+          {/* Platform Filter Buttons */}
           <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none">
-            {user?.email === 'safarser3@gmail.com' && (
-              <Suspense fallback={<div className="w-8 h-8 rounded-full border-2 border-emerald-500/50 border-t-transparent animate-spin" />}>
-                <AdminSocialUpload />
-              </Suspense>
-            )}
-            
-            <button
-              onClick={() => setSelectedPlatform('all')}
-              className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                selectedPlatform === 'all'
-                  ? 'bg-rose-500 text-white shadow-md'
-                  : 'glass-panel text-slate-300 hover:text-white'
-              }`}
-            >
-              All Feeds
-            </button>
             <button
               onClick={() => setSelectedPlatform('instagram')}
               className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
@@ -648,8 +675,18 @@ export const SocialFeedSection: React.FC = () => {
           </div>
         </div>
 
+        {instagramPosts.length > 0 && (
+          <div className={`${selectedPlatform === 'instagram' ? '' : 'hidden'} mb-8 grid grid-cols-1 md:grid-cols-2 gap-8`}>
+            {instagramPosts.map((post) => (
+              <div key={post.id} className="glass-panel w-full max-w-[460px] mx-auto rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
+                <InstagramEmbed postUrl={post.postUrl} />
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Social Feed 2-Column Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 items-start gap-8">
           {isPostsLoading ? (
             [1, 2, 3, 4].map((i) => (
               <div key={i} className="glass-panel rounded-3xl overflow-hidden border border-white/10 flex flex-col h-[600px]">
@@ -687,7 +724,7 @@ export const SocialFeedSection: React.FC = () => {
               <div
                 key={post.id}
                 id={`social-post-${post.id}`}
-                className="glass-panel rounded-3xl overflow-hidden border border-white/10 shadow-2xl flex flex-col justify-between"
+                className="glass-panel h-fit rounded-3xl overflow-hidden border border-white/10 shadow-2xl flex flex-col"
               >
                 {/* Post Author Header */}
                 <div className="p-5 flex items-center justify-between border-b border-white/5">
@@ -720,7 +757,13 @@ export const SocialFeedSection: React.FC = () => {
                   </div>
 
                   <a
-                    href="https://instagram.com"
+                    href={
+                      post.platform === 'twitter'
+                        ? 'https://x.com/againsubha'
+                        : post.platform === 'youtube'
+                        ? 'https://www.youtube.com/@subhaback'
+                        : 'https://www.instagram.com/subhaslyf/'
+                    }
                     target="_blank"
                     rel="noreferrer"
                     className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
@@ -749,27 +792,29 @@ export const SocialFeedSection: React.FC = () => {
                     />
                   )}
 
-                  <div className="p-5 space-y-3">
-                    <p className="font-sans text-sm text-slate-200 leading-relaxed whitespace-pre-line">
-                      {post.caption}
-                    </p>
+                  {post.platform !== 'twitter' && (
+                    <div className="p-5 space-y-3">
+                      <p className="font-sans text-sm text-slate-200 leading-relaxed whitespace-pre-line">
+                        {post.caption}
+                      </p>
 
-                    {/* Hashtags */}
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {post.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="text-xs font-semibold text-rose-400 hover:underline cursor-pointer"
-                        >
-                          {tag}
-                        </span>
-                      ))}
+                      {/* Hashtags */}
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {post.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="text-xs font-semibold text-rose-400 hover:underline cursor-pointer"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Actions & Metrics */}
-                <div className="p-4 bg-[#13151c] border-t border-white/5 space-y-3">
+                {post.platform !== 'twitter' && <div className="p-4 bg-[#13151c] border-t border-white/5 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       {/* Like Button */}
@@ -850,7 +895,7 @@ export const SocialFeedSection: React.FC = () => {
                       </div>
                     </div>
                   )}
-                </div>
+                </div>}
               </div>
             );
           })
