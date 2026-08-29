@@ -125,42 +125,42 @@ export const SOCIAL_POSTS: SocialPost[] = [
 export const INITIAL_FAN_MESSAGES: FanMessage[] = [
   {
     id: 'msg-1',
+    userId: 'seed-1',
     senderName: 'Pooja Verma',
-    location: 'Delhi, India',
+    photoURL: null,
+    isAnonymous: false,
     message: 'Shubhashree Didi, your styling videos give me so much confidence to rock traditional sarees to my college events! You are such a radiant soul, always stay blessed!',
-    badge: 'Superfan',
-    avatarColor: '#f43f5e',
-    createdAt: 'Today at 10:30 AM',
+    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
     likes: 142
   },
   {
     id: 'msg-2',
+    userId: 'seed-2',
     senderName: 'Manish & Team Odisha Fanclub',
-    location: 'Bhubaneswar, Odisha',
+    photoURL: null,
+    isAnonymous: false,
     message: 'So proud to see an Odia creator representing our culture, handlooms, and values with so much class on the national and global stage! Keep flying high!',
-    badge: 'Devoted Supporter',
-    avatarColor: '#8b5cf6',
-    createdAt: 'Yesterday at 4:15 PM',
+    createdAt: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
     likes: 310
   },
   {
     id: 'msg-3',
+    userId: 'seed-3',
     senderName: 'Ayesha Rahman',
-    location: 'London, UK',
+    photoURL: null,
+    isAnonymous: false,
     message: 'Following your fashion journey all the way from London! Love your calm energy, candid vlogs, and how genuinely you interact with all your fans!',
-    badge: 'VIP Fan',
-    avatarColor: '#ec4899',
-    createdAt: '2 days ago',
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     likes: 98
   },
   {
     id: 'msg-4',
+    userId: 'seed-4',
     senderName: 'Vikramaditya Rao',
-    location: 'Bengaluru, India',
+    photoURL: null,
+    isAnonymous: false,
     message: 'Your charity campaigns and tree planting drives show that true influence is used for good. Truly an inspiration for our generation!',
-    badge: 'Art Enthusiast',
-    avatarColor: '#f59e0b',
-    createdAt: '3 days ago',
+    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     likes: 185
   }
 ];

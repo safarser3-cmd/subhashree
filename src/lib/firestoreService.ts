@@ -27,10 +27,19 @@ export const subscribeToFanMessages = (callback: (messages: FanMessage[]) => voi
         seedFanMessagesIfNeeded();
         callback(INITIAL_FAN_MESSAGES);
       } else {
-        const msgs: FanMessage[] = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as FanMessage[];
+        const msgs: FanMessage[] = snapshot.docs.map(d => {
+          const data = d.data() as Partial<FanMessage>;
+          return {
+            id: d.id,
+            userId: data.userId ?? 'seed',
+            senderName: data.senderName ?? 'Anonymous Fan',
+            photoURL: data.photoURL ?? null,
+            isAnonymous: data.isAnonymous ?? false,
+            message: data.message ?? '',
+            createdAt: data.createdAt ?? '',
+            likes: data.likes ?? 0,
+          };
+        });
         callback(msgs);
       }
     }, (error) => {
@@ -51,11 +60,11 @@ async function seedFanMessagesIfNeeded() {
     if (snap.empty) {
       for (const m of INITIAL_FAN_MESSAGES) {
         await addDoc(colRef, {
+          userId: 'seed',
           senderName: m.senderName,
-          location: m.location,
+          photoURL: null,
+          isAnonymous: false,
           message: m.message,
-          badge: m.badge,
-          avatarColor: m.avatarColor,
           createdAt: new Date().toISOString(),
           likes: m.likes
         });
@@ -390,15 +399,15 @@ export const subscribeToSocialPosts = (callback: (posts: any[]) => void) => {
         const initialPosts = SOCIAL_POSTS;
         callback(initialPosts);
         
-        // Only attempt to seed if we have the admin email loaded
-        if (auth.currentUser?.email === 'safarser3@gmail.com') {
-          try {
-            for (const post of initialPosts) {
-              await setDoc(doc(db, 'social_posts', post.id), post);
-            }
-          } catch (e) {
-            console.warn('Silent fallback: Could not seed social posts to Firestore', e);
+        // Attempt to seed without synchronous auth check (Firestore rules will block if not admin)
+        // This allows seeding to work if the user is already authenticated but auth.currentUser was null on first tick
+        try {
+          for (const post of initialPosts) {
+            await setDoc(doc(db, 'social_posts', post.id), post);
           }
+          console.log('Successfully seeded social posts to Firestore');
+        } catch (e) {
+          console.warn('Silent fallback: Could not seed social posts to Firestore (likely permission denied)', e);
         }
       } else {
         const posts = snap.docs.map(d => ({ id: d.id, ...d.data() }));

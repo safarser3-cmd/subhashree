@@ -12,6 +12,7 @@ import { SubmitFanArtModal } from './components/SubmitFanArtModal';
 import { Footer } from './components/Footer';
 import { FanArtSubmission } from './types';
 import { subscribeToFanArt, addFanArtToFirestore, likeFanArtInFirestore } from './lib/firestoreService';
+import { AuthProvider } from './lib/authContext';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState<string>('home');
@@ -109,6 +110,7 @@ export default function App() {
   }, []);
 
   return (
+    <AuthProvider>
     <div className="min-h-screen w-full bg-[#0b0c10] text-[#e2e8f0] flex flex-col font-sans selection:bg-rose-500/30 selection:text-rose-200 overflow-x-hidden">
       {/* Top Fixed Modern Navigation Bar */}
       <Navbar
@@ -163,6 +165,7 @@ export default function App() {
       {/* Modern Fan Club Footer */}
       <Footer onNavigate={handleNavigate} />
     </div>
+    </AuthProvider>
   );
 }
 

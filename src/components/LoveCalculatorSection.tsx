@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Heart, Sparkles, RefreshCw, Share2, Copy, Check, X, Download } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import gsap from 'gsap';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 
 interface StepRow {
   numbers: number[];
@@ -153,14 +153,14 @@ export const LoveCalculatorSection: React.FC = () => {
     if (!shareCardRef.current) return;
     try {
       setIsDownloading(true);
-      const canvas = await html2canvas(shareCardRef.current, {
-        scale: 3,
+      const dataUrl = await toPng(shareCardRef.current, {
+        pixelRatio: 3,
         backgroundColor: '#121520',
-        useCORS: true,
-        logging: false,
-        allowTaint: true
+        cacheBust: true,
+        skipFonts: false,
+        fontEmbedCSS: 'https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,800;1,900&display=swap'
       });
-      const image = canvas.toDataURL('image/png');
+      const image = dataUrl;
       const link = document.createElement('a');
       link.href = image;
       link.download = `Subhashree-Love-Score-${userName.trim() || 'Fan'}.png`;
@@ -180,7 +180,7 @@ export const LoveCalculatorSection: React.FC = () => {
       {/* Background Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-rose-500/10 blur-[160px] rounded-full pointer-events-none" />
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Section Header */}
         <div className="text-center mb-12">
@@ -197,14 +197,14 @@ export const LoveCalculatorSection: React.FC = () => {
         </div>
 
         {/* Calculator Card */}
-        <div className="glass-panel p-8 sm:p-12 rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent shadow-2xl relative">
+        <div className="glass-panel p-6 sm:p-8 lg:p-10 rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent shadow-2xl relative">
           
           <form onSubmit={handleStartCalculation} className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-stretch">
               
               {/* Fan Name Input */}
-              <div className="space-y-2">
-                <label className="block text-xs font-syne uppercase font-bold text-slate-300 tracking-wider">
+              <div className="flex flex-col gap-2 h-full">
+                <label className="block text-xs font-syne uppercase font-bold text-slate-300 tracking-wider h-5">
                   Your Name
                 </label>
                 <input
@@ -212,17 +212,20 @@ export const LoveCalculatorSection: React.FC = () => {
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
                   placeholder="Enter your name (e.g. Vivek)"
-                  className="w-full px-4 py-3.5 rounded-2xl bg-black/50 border border-white/15 text-white text-sm focus:outline-none focus:border-rose-500 transition-all placeholder:text-slate-500"
+                  className="w-full h-full min-h-[52px] px-4 py-3.5 rounded-2xl bg-black/50 border border-white/15 text-white text-sm focus:outline-none focus:border-rose-500 transition-all placeholder:text-slate-500 hover:border-white/25"
                   required
                 />
               </div>
 
               {/* Fixed Target Name */}
-              <div className="space-y-2">
-
-                <div className="w-full px-4 py-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-200 text-sm font-syne font-bold flex items-center justify-between">
-                  <span>SUBHASHREE</span>
-                  <Sparkles className="w-4 h-4 text-rose-400" />
+              <div className="flex flex-col gap-2 h-full">
+                <label className="block text-xs font-syne uppercase font-bold text-rose-300 tracking-wider h-5">
+                  Your Celebrity
+                </label>
+                <div className="relative w-full h-full min-h-[52px] px-4 py-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-200 text-sm font-syne font-bold flex items-center justify-between overflow-hidden group hover:bg-rose-500/20 hover:border-rose-400/50 transition-all">
+                  <div className="absolute inset-0 bg-gradient-to-r from-rose-500/0 via-rose-400/10 to-rose-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                  <span className="relative tracking-wider">SUBHASHREE</span>
+                  <Sparkles className="w-4 h-4 text-rose-400 relative animate-pulse" />
                 </div>
               </div>
 
@@ -263,28 +266,28 @@ export const LoveCalculatorSection: React.FC = () => {
 
           {/* Clean Visual Reduction Rows (Connecting Outer Numbers) */}
           {steps.length > 0 && (
-            <div className="mt-10 pt-8 border-t border-white/10 space-y-6">
-              <div className="space-y-4" ref={stepsContainerRef}>
+            <div className="mt-8 pt-6 border-t border-white/10 space-y-4">
+              <div className="space-y-2" ref={stepsContainerRef}>
                 {steps.slice(0, currentStepIndex + 1).map((step, sIdx) => {
                   const len = step.numbers.length;
                   return (
                     <div
                       key={sIdx}
-                      className="step-row-item p-5 rounded-2xl bg-black/40 border border-white/10 flex flex-col items-center justify-center gap-3 shadow-lg relative overflow-hidden"
+                      className="step-row-item py-3 px-4 rounded-2xl bg-black/40 border border-white/10 flex flex-col items-center justify-center gap-1.5 shadow-lg relative overflow-hidden"
                     >
                       {/* Visual Outer-to-Inner Arc Indicator for active steps */}
-                      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+                      <div className="flex flex-nowrap items-center justify-center gap-1.5">
                         {step.numbers.map((num, nIdx) => {
                           const isOuter = nIdx === 0 || nIdx === len - 1;
                           const isMiddle = nIdx === Math.floor(len / 2) && len % 2 === 1;
                           return (
                             <div key={nIdx} className="relative flex flex-col items-center group">
                               <div
-                                className={`num-badge w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center font-syne font-extrabold text-base sm:text-lg shadow-xl transition-all duration-300 ${
+                                className={`num-badge w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center font-syne font-extrabold text-xs sm:text-sm shadow-xl transition-all duration-300 ${
                                   isOuter
-                                    ? 'bg-gradient-to-tr from-rose-600 to-pink-500 text-white border-2 border-rose-300/65 shadow-rose-500/30'
+                                    ? 'bg-gradient-to-tr from-rose-600 to-pink-500 text-white border border-rose-300/65 shadow-rose-500/30'
                                     : isMiddle
-                                    ? 'bg-gradient-to-tr from-purple-600 to-indigo-600 text-white border-2 border-purple-300/40'
+                                    ? 'bg-gradient-to-tr from-purple-600 to-indigo-600 text-white border border-purple-300/40'
                                     : 'bg-white/10 text-white border border-white/20'
                                 }`}
                               >
@@ -297,7 +300,7 @@ export const LoveCalculatorSection: React.FC = () => {
 
                       {/* Connecting visual cue below row indicating outer pairs adding up */}
                       {sIdx < steps.length - 1 && (
-                        <div className="flex items-center gap-1.5 text-[10px] font-syne uppercase tracking-wider text-rose-300/80 pt-1">
+                        <div className="flex items-center gap-1 text-[9px] font-syne uppercase tracking-wider text-rose-300/70 pt-0.5">
                           <span>Combining Outer Edges ⇄</span>
                         </div>
                       )}
@@ -324,9 +327,6 @@ export const LoveCalculatorSection: React.FC = () => {
                 <h3 className="font-syne text-2xl font-bold text-white">
                   {userName.trim().toUpperCase()} & SUBHASHREE
                 </h3>
-                <p className="text-sm font-sans font-medium text-rose-300 leading-relaxed">
-                  {tierMessage}
-                </p>
               </div>
 
               {/* Share Result Card Button */}
@@ -372,68 +372,149 @@ export const LoveCalculatorSection: React.FC = () => {
             </div>
 
             {/* The Gorgeous Card Preview with ref for downloading */}
-            <div 
-              ref={shareCardRef} 
-              style={{ backgroundColor: '#121520', borderColor: 'rgba(244, 63, 94, 0.3)', color: '#ffffff', padding: '16px 20px', borderRadius: '16px', borderStyle: 'solid', borderWidth: '1px', textAlign: 'center', position: 'relative', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)' }}
+            <div
+              ref={shareCardRef}
+              style={{
+                backgroundColor: '#1a0a14',
+                backgroundImage: `
+                  radial-gradient(circle at 15% 20%, rgba(244,63,94,0.45) 0%, transparent 35%),
+                  radial-gradient(circle at 85% 25%, rgba(236,72,153,0.40) 0%, transparent 40%),
+                  radial-gradient(circle at 50% 90%, rgba(168,85,247,0.35) 0%, transparent 45%),
+                  radial-gradient(circle at 20% 80%, rgba(251,113,133,0.30) 0%, transparent 35%),
+                  radial-gradient(circle at 90% 75%, rgba(244,63,94,0.30) 0%, transparent 35%),
+                  linear-gradient(180deg, rgba(244,63,94,0.08) 0%, transparent 50%, rgba(168,85,247,0.08) 100%)
+                `,
+                color: '#ffffff',
+                padding: '6px',
+                borderRadius: '20px',
+                textAlign: 'center',
+                position: 'relative',
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.7), inset 0 0 60px rgba(244,63,94,0.08)',
+                overflow: 'hidden',
+                backgroundClip: 'padding-box'
+              }}
             >
-              <div 
-                style={{ backgroundColor: 'rgba(244, 63, 94, 0.2)', color: '#fda4af', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 12px', borderRadius: '9999px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}
-              >
-                <Sparkles style={{ width: '10px', height: '10px', color: '#fda4af' }} />
-                <span>SUBHASHREE Fan Portal</span>
-              </div>
+              {/* Gradient double border using padding-box trick */}
+              <div style={{
+                position: 'absolute', inset: 0, borderRadius: '20px', padding: '3px',
+                background: 'linear-gradient(135deg, #f43f5e 0%, #f59e0b 35%, #a855f7 70%, #ec4899 100%)',
+                WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
+                WebkitMaskComposite: 'xor', maskComposite: 'exclude',
+                pointerEvents: 'none',
+                filter: 'drop-shadow(0 0 8px rgba(244,63,94,0.35))'
+              }} />
 
-              <div style={{ marginTop: '12px', marginBottom: '12px' }}>
-                <h4 style={{ color: '#ffffff', fontSize: '16px', fontWeight: 800, margin: 0 }}>
-                  {userName.trim().toUpperCase()}
-                </h4>
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0' }}>
-                  <Heart style={{ width: '16px', height: '16px', fill: '#f43f5e', color: '#f43f5e' }} />
+              {/* Corner sparkles */}
+              <div style={{ position: 'absolute', top: '10px', left: '10px', color: 'rgba(253,164,175,0.7)' }}>✦</div>
+              <div style={{ position: 'absolute', top: '10px', right: '10px', color: 'rgba(253,164,175,0.7)' }}>✦</div>
+              <div style={{ position: 'absolute', bottom: '10px', left: '10px', color: 'rgba(253,164,175,0.7)' }}>✦</div>
+              <div style={{ position: 'absolute', bottom: '10px', right: '10px', color: 'rgba(253,164,175,0.7)' }}>✦</div>
+
+              <div style={{
+                position: 'relative',
+                padding: '16px 18px'
+              }}>
+                <div style={{ marginTop: '6px', marginBottom: '6px' }}>
+                  <h4 style={{
+                    color: '#ffffff', fontSize: '20px', fontWeight: 800, margin: 0,
+                    letterSpacing: '0.04em',
+                    fontFamily: '"Playfair Display", "Outfit", serif',
+                    fontStyle: 'italic',
+                    textShadow: '0 2px 12px rgba(244,63,94,0.35)'
+                  }}>
+                    {userName.trim().toUpperCase()}
+                  </h4>
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: '6px 0', position: 'relative' }}>
+                    <div style={{
+                      position: 'relative', width: '28px', height: '28px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      <div style={{
+                        position: 'absolute', inset: '-6px', borderRadius: '9999px',
+                        background: 'radial-gradient(circle, rgba(244,63,94,0.45) 0%, transparent 70%)',
+                        filter: 'blur(4px)'
+                      }} />
+                      <Heart style={{
+                        width: '22px', height: '22px',
+                        fill: 'url(#heartGrad)', stroke: '#fda4af', strokeWidth: 1.5,
+                        filter: 'drop-shadow(0 0 6px rgba(244,63,94,0.7))'
+                      }} />
+                      <svg width="0" height="0" style={{ position: 'absolute' }}>
+                        <defs>
+                          <linearGradient id="heartGrad" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stopColor="#fb7185" />
+                            <stop offset="50%" stopColor="#f43f5e" />
+                            <stop offset="100%" stopColor="#a855f7" />
+                          </linearGradient>
+                        </defs>
+                      </svg>
+                    </div>
+                  </div>
+                  <h4 style={{
+                    color: '#fda4af', fontSize: '20px', fontWeight: 800, margin: 0,
+                    letterSpacing: '0.04em',
+                    fontFamily: '"Playfair Display", "Outfit", serif',
+                    fontStyle: 'italic',
+                    textShadow: '0 2px 12px rgba(244,63,94,0.35)'
+                  }}>
+                    SUBHASHREE
+                  </h4>
                 </div>
-                <h4 style={{ color: '#fbcfe8', fontSize: '16px', fontWeight: 800, margin: 0 }}>
-                  SUBHASHREE
-                </h4>
-              </div>
 
-              {/* Score Badge in Card */}
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0' }}>
-                <div style={{ background: 'linear-gradient(135deg, #f43f5e, #db2777)', width: '64px', height: '64px', borderRadius: '9999px', padding: '3px', boxShadow: '0 10px 15px -3px rgba(244, 63, 94, 0.4)' }}>
-                  <div style={{ backgroundColor: '#0d0f16', width: '100%', height: '100%', borderRadius: '9999px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ color: '#ffffff', fontSize: '16px', fontWeight: 800, lineHeight: 1 }}>
-                      {finalScore}%
-                    </span>
-                    <span style={{ color: '#fbcfe8', fontSize: '7px', textTransform: 'uppercase', marginTop: '2px', letterSpacing: '0.05em' }}>Bond</span>
+                {/* SVG progress ring + score */}
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '6px 0' }}>
+                  <div style={{ position: 'relative', width: '88px', height: '88px' }}>
+                    <svg width="88" height="88" viewBox="0 0 88 88" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
+                      <circle cx="44" cy="44" r="38" stroke="rgba(255,255,255,0.08)" strokeWidth="6" fill="none" />
+                      <circle cx="44" cy="44" r="38" stroke="url(#ringGrad)" strokeWidth="6" fill="none"
+                        strokeDasharray={`${(2 * Math.PI * 38 * (finalScore || 0)) / 100} ${2 * Math.PI * 38}`}
+                        strokeLinecap="round" />
+                      <defs>
+                        <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+                          <stop offset="0%" stopColor="#f43f5e" />
+                          <stop offset="50%" stopColor="#f59e0b" />
+                          <stop offset="100%" stopColor="#a855f7" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <div style={{
+                      position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+                      alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      <span style={{ color: '#ffffff', fontSize: '20px', fontWeight: 800, lineHeight: 1 }}>
+                        {finalScore}%
+                      </span>
+                      <span style={{ color: '#fbcfe8', fontSize: '7px', textTransform: 'uppercase', marginTop: '2px', letterSpacing: '0.1em' }}>Bond</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Compact Calculation Steps inside Card */}
-              <div style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', borderColor: 'rgba(255, 255, 255, 0.1)', borderWidth: '1px', borderStyle: 'solid', borderRadius: '12px', padding: '8px', margin: '12px 0' }}>
-                <div style={{ color: '#fda4af', fontSize: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
-                  Calculation Steps
+                {/* Compact Calculation Steps inside Card */}
+                <div style={{ backgroundColor: 'rgba(0,0,0,0.5)', borderColor: 'rgba(255,255,255,0.1)', borderWidth: '1px', borderStyle: 'solid', borderRadius: '12px', padding: '8px', margin: '8px 0' }}>
+                  <div style={{ color: '#fda4af', fontSize: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                    Calculation Steps
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                    {steps.map((st, i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'center', gap: '4px', flexWrap: 'nowrap', lineHeight: 0 }}>
+                        {st.numbers.map((n, idx) => (
+                          <div
+                            key={idx}
+                            style={{ width: '24px', height: '24px', borderRadius: '5px', backgroundColor: 'rgba(255,255,255,0.15)', flexShrink: 0, boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: '24px' }}
+                          >
+                            <span style={{ display: 'block', width: '24px', height: '24px', lineHeight: '24px', textAlign: 'center', color: '#ffffff', fontSize: '12px', fontWeight: 700, fontFamily: 'Outfit, Plus Jakarta Sans, sans-serif', padding: 0, margin: 0, verticalAlign: 'middle' }}>
+                              {n}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
-                  {steps.map((st, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '3px' }}>
-                      {st.numbers.map((n, idx) => (
-                        <span
-                          key={idx}
-                          style={{ backgroundColor: 'rgba(255, 255, 255, 0.15)', color: '#ffffff', width: '16px', height: '16px', borderRadius: '4px', fontSize: '9px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-                        >
-                          {n}
-                        </span>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
 
-              <p style={{ color: '#cbd5e1', fontSize: '10px', fontStyle: 'italic', margin: '8px 0 4px 0' }}>
-                "{tierMessage}"
-              </p>
-
-              <div style={{ color: '#94a3b8', borderTopColor: 'rgba(255, 255, 255, 0.1)', borderTopWidth: '1px', borderTopStyle: 'solid', paddingTop: '6px', fontSize: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Verified Community Fan Score • {new Date().toLocaleDateString()}
+                <p style={{ color: '#cbd5e1', fontSize: '10px', fontStyle: 'italic', margin: '6px 0 2px 0', lineHeight: 1.4, display: 'none' }}>
+                  "{tierMessage}"
+                </p>
               </div>
             </div>
 

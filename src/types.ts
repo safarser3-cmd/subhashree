@@ -68,11 +68,11 @@ export interface FanArtSubmission {
 
 export interface FanMessage {
   id: string;
+  userId: string;
   senderName: string;
-  location: string;
+  photoURL?: string | null;
+  isAnonymous: boolean;
   message: string;
-  badge: 'Superfan' | 'VIP Fan' | 'Art Enthusiast' | 'Devoted Supporter' | 'Style Lover';
-  avatarColor: string;
   createdAt: string;
   likes: number;
 }

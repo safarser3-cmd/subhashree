@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { Sparkles, Image, Heart, Share2, Menu, X, PlusCircle, Instagram, Youtube, Twitter } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Sparkles, Image, Heart, Share2, Menu, X, PlusCircle, Instagram, Youtube, Twitter, LogOut, LogIn, UserCircle2 } from 'lucide-react';
+import { useCurrentUser } from '../lib/authContext';
+import { signInWithGoogle, signInAsGuest, signOutCurrentUser } from '../lib/authService';
 
 interface NavbarProps {
   activeSection: string;
@@ -13,6 +15,68 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenSubmitModal
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [showGlobalGuestPrompt, setShowGlobalGuestPrompt] = useState(false);
+  const [guestName, setGuestName] = useState('');
+  const [globalAuthError, setGlobalAuthError] = useState<string | null>(null);
+  const [authBusy, setAuthBusy] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const { user, ready } = useCurrentUser();
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleClick);
+      return () => document.removeEventListener('mousedown', handleClick);
+    }
+  }, [userMenuOpen]);
+
+  const handleGlobalGoogleSignIn = async () => {
+    setGlobalAuthError(null);
+    setAuthBusy(true);
+    try {
+      await signInWithGoogle();
+      setUserMenuOpen(false);
+    } catch (e: any) {
+      setGlobalAuthError(e?.message || 'Google sign-in failed.');
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const handleGlobalGuestSignIn = async () => {
+    setGlobalAuthError(null);
+    const name = guestName.trim();
+    if (!name) {
+      setGlobalAuthError('Please enter a display name to continue as guest.');
+      return;
+    }
+    setAuthBusy(true);
+    try {
+      await signInAsGuest(name);
+      setShowGlobalGuestPrompt(false);
+      setGuestName('');
+      setUserMenuOpen(false);
+    } catch (e: any) {
+      setGlobalAuthError(e?.message || 'Guest sign-in failed.');
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const handleGlobalSignOut = async () => {
+    try {
+      await signOutCurrentUser();
+      setUserMenuOpen(false);
+    } catch (e) {
+      console.error('Sign out failed', e);
+    }
+  };
 
   const navLinks = [
     { id: 'home', label: 'Home' },
@@ -122,6 +186,135 @@ export const Navbar: React.FC<NavbarProps> = ({
               <PlusCircle className="w-4 h-4" />
               <span>Submit Fan Art</span>
             </button>
+
+            {/* Auth chip / Sign-in dropdown */}
+            <div className="relative" ref={userMenuRef}>
+              {!ready ? (
+                <div className="w-9 h-9 rounded-full bg-white/5 animate-pulse" />
+              ) : user ? (
+                <button
+                  id="navbar-user-btn"
+                  onClick={() => setUserMenuOpen((v) => !v)}
+                  className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition"
+                  title={user.displayName || 'Account'}
+                >
+                  {user.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt={user.displayName || 'avatar'}
+                      referrerPolicy="no-referrer"
+                      className="w-7 h-7 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white font-bold text-xs">
+                      {(user.displayName || 'A').charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span className="hidden md:inline text-[11px] font-semibold text-slate-200 max-w-[120px] truncate">
+                    {user.displayName || 'Fan'}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  id="navbar-signin-btn"
+                  onClick={() => {
+                    setUserMenuOpen((v) => !v);
+                    setGlobalAuthError(null);
+                    setShowGlobalGuestPrompt(false);
+                  }}
+                  className="px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[11px] font-bold tracking-wide transition flex items-center gap-1.5"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  Sign In
+                </button>
+              )}
+
+              {userMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-72 bg-[#13151c] border border-white/10 rounded-2xl shadow-2xl p-3 z-50 animate-fade-in">
+                  {user ? (
+                    <>
+                      <div className="flex items-center gap-3 p-2">
+                        {user.photoURL ? (
+                          <img
+                            src={user.photoURL}
+                            alt={user.displayName || 'avatar'}
+                            referrerPolicy="no-referrer"
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white font-bold">
+                            {(user.displayName || 'A').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <div className="text-sm font-bold text-white truncate">
+                            {user.displayName || 'Anonymous Fan'}
+                          </div>
+                          <div className="text-[11px] text-slate-400">
+                            {user.isAnonymous ? 'Guest' : user.email || 'Google account'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="border-t border-white/10 my-2" />
+                      <button
+                        onClick={handleGlobalSignOut}
+                        className="w-full text-left text-xs text-slate-200 hover:bg-white/5 rounded-xl px-3 py-2 flex items-center gap-2"
+                      >
+                        <LogOut className="w-4 h-4" /> Sign out
+                      </button>
+                    </>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-[11px] text-slate-400 px-1">
+                        Sign in to post on the Fan Wall and submit Fan Art.
+                      </p>
+                      <button
+                        onClick={handleGlobalGoogleSignIn}
+                        disabled={authBusy}
+                        className="w-full px-3 py-2.5 rounded-xl bg-white text-slate-900 font-bold text-xs flex items-center justify-center gap-2 hover:bg-slate-100 disabled:opacity-60"
+                      >
+                        <LogIn className="w-4 h-4" />
+                        {authBusy ? 'Connecting…' : 'Continue with Google'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowGlobalGuestPrompt((v) => !v);
+                          setGlobalAuthError(null);
+                        }}
+                        className="w-full px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-xs flex items-center justify-center gap-2"
+                      >
+                        <UserCircle2 className="w-4 h-4" />
+                        Continue as Guest
+                      </button>
+                      {showGlobalGuestPrompt && (
+                        <div className="space-y-2 pt-1">
+                          <input
+                            type="text"
+                            maxLength={32}
+                            placeholder="Display name"
+                            value={guestName}
+                            onChange={(e) => setGuestName(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500"
+                          />
+                          <button
+                            onClick={handleGlobalGuestSignIn}
+                            disabled={authBusy}
+                            className="w-full px-3 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 text-white font-bold text-xs disabled:opacity-60"
+                          >
+                            {authBusy ? 'Signing in…' : 'Continue as Guest'}
+                          </button>
+                        </div>
+                      )}
+                      {globalAuthError && (
+                        <div className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/40 text-[11px] text-rose-200">
+                          {globalAuthError}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Mobile Menu Toggle Button */}
@@ -181,6 +374,26 @@ export const Navbar: React.FC<NavbarProps> = ({
               </a>
             </div>
           </div>
+
+          {user ? (
+            <button
+              onClick={handleGlobalSignOut}
+              className="w-full mt-3 text-left px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-200 hover:bg-white/10 flex items-center gap-2"
+            >
+              <LogOut className="w-4 h-4" /> Sign out ({user.displayName || 'Fan'})
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setUserMenuOpen(true);
+                setShowGlobalGuestPrompt(false);
+              }}
+              className="w-full mt-3 text-left px-4 py-2.5 rounded-xl text-sm font-semibold bg-rose-500 text-white shadow-md flex items-center gap-2"
+            >
+              <LogIn className="w-4 h-4" /> Sign In
+            </button>
+          )}
         </div>
       )}
     </header>
