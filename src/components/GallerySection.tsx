@@ -28,8 +28,7 @@ type SizeFilter = 'all' | 'mobile' | 'desktop' | 'square';
 export const GallerySection: React.FC = () => {
   const [user] = useAuthState(auth);
   
-  const [baseItems, setBaseItems] = useState<GalleryItem[]>([]);
-  const [featuredFanArts, setFeaturedFanArts] = useState<GalleryItem[]>([]);
+  const [items, setItems] = useState<GalleryItem[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('all');
   const [selectedSize, setSelectedSize] = useState<SizeFilter>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -39,58 +38,14 @@ export const GallerySection: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const items = [...baseItems, ...featuredFanArts];
-
   // Subscribe to Firestore gallery items
   useEffect(() => {
     const unsubscribeGallery = subscribeToGalleryItems((fetchedItems) => {
-      setBaseItems(fetchedItems);
+      setItems(fetchedItems);
       setIsLoading(false);
     });
     
-    const unsubscribeFanArt = subscribeToFanArt((fetchedFanArts) => {
-      const featured = fetchedFanArts
-        .filter(art => art.isFeatured && (art.imageUrl || art.videoUrl))
-        .map(art => {
-          // Determine aspect ratio from size string if possible
-          let aspectRatio: '9:16' | '16:9' | '1:1' | '4:5' | undefined;
-          let orientation: 'mobile' | 'desktop' | 'square' | 'portrait' | undefined;
-          
-          if (art.size?.includes('9:16')) {
-            aspectRatio = '9:16';
-            orientation = 'mobile';
-          } else if (art.size?.includes('16:9')) {
-            aspectRatio = '16:9';
-            orientation = 'desktop';
-          } else if (art.size?.includes('1:1')) {
-            aspectRatio = '1:1';
-            orientation = 'square';
-          } else if (art.size?.includes('4:5')) {
-            aspectRatio = '4:5';
-            orientation = 'portrait';
-          }
-
-          const galleryItem: GalleryItem = {
-            id: `featured-${art.id}`,
-            title: art.title,
-            category: 'Featured Fan Art' as any, // Cast to any to bypass strict type check for categories
-            imageUrl: art.imageUrl || art.videoUrl || '',
-            date: art.submittedAt,
-            aspectRatio,
-            orientation,
-            caption: `By ${art.artistName} - ${art.description}`,
-            likes: art.likes,
-            tags: ['Fan Art', 'Featured']
-          };
-          return galleryItem;
-        });
-      setFeaturedFanArts(featured);
-    });
-
-    return () => {
-      unsubscribeGallery();
-      unsubscribeFanArt();
-    };
+    return () => unsubscribeGallery();
   }, []);
 
   // Lock background scroll when modal is active

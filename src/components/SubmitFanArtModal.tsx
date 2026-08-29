@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FanArtSubmission } from '../types';
-import { X, Sparkles, Image, Video, Feather, CheckCircle2, Link, AlertCircle, LogIn } from 'lucide-react';
+import { X, Sparkles, Image, Video, Feather, CheckCircle2, Link, AlertCircle, LogIn, Upload } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuthState, useSignInWithGoogle } from 'react-firebase-hooks/auth';
 import { auth } from '../lib/firebase';
@@ -26,6 +26,7 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
   const [textEssay, setTextEssay] = useState('');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [lastSubmissionAt, setLastSubmissionAt] = useState(0);
 
@@ -33,6 +34,60 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
 
   const [user, loadingAuth] = useAuthState(auth);
   const [signInWithGoogle, , loadingGoogle] = useSignInWithGoogle(auth);
+
+  const handleImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check size limit (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Image must be less than 10MB.');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      setError(null);
+
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) {
+        throw new Error('You must be logged in to upload artwork.');
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'pending');
+
+      // Upload to user's Cloudflare Worker (Appended /pending/ to URL to support typical R2 Worker routing)
+      const safeName = encodeURIComponent(file.name.replace(/[^a-zA-Z0-9.-]/g, '_'));
+      const workerUrl = import.meta.env.VITE_CLOUDFLARE_WORKER_URL || 'https://fan-art-upload.safarser3.workers.dev';
+      // Remove trailing slash if present
+      const cleanUrl = workerUrl.endsWith('/') ? workerUrl.slice(0, -1) : workerUrl;
+      const res = await fetch(cleanUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Upload failed: ${res.status} ${errText}`);
+      }
+
+      const data = await res.json();
+      if (data.url) {
+        setImageUrl(data.url);
+      } else {
+        throw new Error('Worker response did not contain a URL.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to upload image.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -85,9 +140,10 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
       videoUrl: videoUrl.trim() || undefined,
       textEssay: textEssay.trim() || undefined,
       description: description.trim() || 'A creative fan homage celebrating Shubhashree Sahu.',
-      submittedAt: 'Just now',
+      submittedAt: new Date().toISOString(),
       likes: 1,
-      isFeatured: false
+      isFeatured: false,
+      status: 'pending'
     };
 
     try {
@@ -339,14 +395,37 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
                   <label className="block text-xs font-bold text-slate-300">
                     Upload Image or Paste Image URL
                   </label>
-                  <div>
-                    <input
-                      type="url"
-                      placeholder="https://pub-...r2.dev/..."
-                      value={imageUrl}
-                      onChange={(e) => setImageUrl(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500"
-                    />
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <label className={`flex-1 border-2 border-dashed ${isUploading ? 'border-rose-500/50 bg-rose-500/10 cursor-not-allowed' : 'border-white/15 hover:border-rose-500/50 cursor-pointer'} rounded-2xl p-4 flex flex-col items-center justify-center transition-colors text-center`}>
+                      {isUploading ? (
+                        <div className="w-6 h-6 rounded-full border-2 border-rose-500 border-t-transparent animate-spin mb-1" />
+                      ) : (
+                        <Upload className="w-6 h-6 text-rose-400 mb-1" />
+                      )}
+                      <span className="text-xs font-bold text-slate-200">
+                        {isUploading ? 'Uploading...' : 'Select File'}
+                      </span>
+                      <span className="text-[10px] text-slate-400">PNG, JPG up to 10MB</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageFile}
+                        disabled={isUploading}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <div className="flex-1 flex flex-col justify-center">
+                      <input
+                        type="url"
+                        placeholder="Or paste image URL"
+                        value={imageUrl}
+                        onChange={(e) => setImageUrl(e.target.value)}
+                        disabled={isUploading}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
 
                   {imageUrl && (
                     <div className="mt-2 h-28 w-full rounded-xl overflow-hidden bg-black relative border border-white/10">

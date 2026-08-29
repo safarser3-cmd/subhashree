@@ -43,7 +43,7 @@ service cloud.firestore {
               request.resource.data.keys().hasOnly([
                 'id', 'title', 'artistName', 'artistHandle', 'category', 'size',
                 'imageUrl', 'videoUrl', 'textEssay', 'description', 'submittedAt',
-                'likes', 'isFeatured'
+                'likes', 'isFeatured', 'status'
               ])
               && request.resource.data.id is string
               && request.resource.data.id.size() <= 80

@@ -63,6 +63,7 @@ export interface FanArtSubmission {
   submittedAt: string;
   likes: number;
   isFeatured?: boolean;
+  status?: 'pending' | 'approved' | 'rejected';
 }
 
 export interface FanMessage {
