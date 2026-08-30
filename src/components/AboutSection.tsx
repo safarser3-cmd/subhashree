@@ -23,7 +23,7 @@ import {
   Save,
   X
 } from 'lucide-react';
-import { subscribeToBio, updateBioInFirestore, BioContent, DEFAULT_BIO } from '../lib/firestoreService';
+import { BioContent, DEFAULT_BIO } from '../lib/firestoreService';
 
 export const AboutSection: React.FC = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -32,18 +32,38 @@ export const AboutSection: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<BioContent>(DEFAULT_BIO);
 
+  // Fetch bio data from Redis via our backend API
   useEffect(() => {
-    const unsubscribe = subscribeToBio((fetched) => {
-      setBioData(fetched);
-      setEditForm(fetched);
-    });
-    return () => unsubscribe();
+    const fetchBio = async () => {
+      try {
+        const response = await fetch('/api/content/bio');
+        if (response.ok) {
+          const data = await response.json();
+          setBioData(data);
+          setEditForm(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch bio from Redis:', error);
+      }
+    };
+    fetchBio();
   }, []);
 
   const handleSaveBio = async (e: React.FormEvent) => {
     e.preventDefault();
-    await updateBioInFirestore(editForm);
-    setIsEditing(false);
+    try {
+      const response = await fetch('/api/content/bio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm),
+      });
+      if (response.ok) {
+        setBioData(editForm);
+        setIsEditing(false);
+      }
+    } catch (error) {
+      console.error('Failed to update bio in Redis:', error);
+    }
   };
 
   useEffect(() => {
@@ -105,7 +125,7 @@ export const AboutSection: React.FC = () => {
             </h2>
             <button
               onClick={() => setIsEditing(true)}
-              title="Edit Profile Bio in Firestore"
+              title="Edit Profile Bio in Redis"
               className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-all cursor-pointer border border-white/15"
             >
               <Edit3 className="w-4 h-4 text-rose-400" />
@@ -134,7 +154,7 @@ export const AboutSection: React.FC = () => {
 
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs font-medium">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Synced with Firestore 'bio'</span>
+                <span>Synced with Redis Cache</span>
               </div>
             </div>
 
@@ -310,7 +330,7 @@ export const AboutSection: React.FC = () => {
             <div className="flex items-center justify-between pb-4 mb-6 border-b border-white/10">
               <h3 className="font-syne text-xl font-bold text-white flex items-center gap-2">
                 <Edit3 className="w-5 h-5 text-rose-400" />
-                <span>Edit Biography & Profile (Firestore)</span>
+                <span>Edit Biography & Profile (Redis)</span>
               </h3>
               <button
                 onClick={() => setIsEditing(false)}
@@ -367,7 +387,7 @@ export const AboutSection: React.FC = () => {
                   className="px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-rose-500/25"
                 >
                   <Save className="w-4 h-4" />
-                  <span>Save to Firestore</span>
+                  <span>Save to Redis Cache</span>
                 </button>
               </div>
             </form>

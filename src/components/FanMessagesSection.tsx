@@ -175,13 +175,6 @@ export const FanMessagesSection: React.FC = () => {
 
     setUiState({ kind: 'checking' });
 
-    const moderation: ModerationResult = await moderateMessage(finalMessage);
-
-    if (!moderation.safe) {
-      setUiState({ kind: 'rejected', reason: moderation.reason });
-      return;
-    }
-
     const isAnon = currentUser.isAnonymous;
     const newMsg = {
       userId: currentUser.uid,
@@ -203,11 +196,11 @@ export const FanMessagesSection: React.FC = () => {
         origin: { y: 0.7 },
         colors: ['#f43f5e', '#ec4899', '#f59e0b'],
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to post message', err);
       setUiState({
         kind: 'rejected',
-        reason: 'Could not save your message right now. Please try again in a moment.',
+        reason: err.message || 'Could not save your message right now. Please try again in a moment.',
       });
     }
   };

@@ -352,15 +352,6 @@ export const SocialFeedSection: React.FC = () => {
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
               <span className="text-slate-300 font-medium">{lastUpdated}</span>
             </div>
-            <button
-              onClick={refreshLiveStats}
-              disabled={isRefreshing}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-bold text-white transition-all cursor-pointer shadow-lg active:scale-95 disabled:opacity-50"
-              title="Sync Live Metrics"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 text-rose-400 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span>{isRefreshing ? 'Syncing...' : 'Sync Live Counts'}</span>
-            </button>
           </div>
         </div>
 

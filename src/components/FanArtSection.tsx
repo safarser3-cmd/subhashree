@@ -310,7 +310,7 @@ export const FanArtSection: React.FC<FanArtSectionProps> = ({
           ) : (
             displayedArts.map((art) => {
               const isLiked = likedArtIds.has(art.id);
-              const totalLikes = art.likes + (isLiked ? 1 : 0);
+              const totalLikes = art.likes;
 
               return (
               <div
