@@ -60,43 +60,7 @@ export async function syncMessagesToFirestore() {
       }
     }
 
-    // Sync Fan Art
-    const fanartLen = await redis.llen("fanart_pending_sync");
-    if (fanartLen > 0) {
-      console.log(`[Background Sync] Found ${fanartLen} pending fan arts. Syncing...`);
-      for (let i = 0; i < fanartLen; i++) {
-        const artStr = await redis.rpop("fanart_pending_sync");
-        if (!artStr) continue;
-        const art = JSON.parse(artStr);
-        const firestorePayload = {
-          fields: {
-            id: { stringValue: art.id },
-            title: { stringValue: art.title || "" },
-            artistName: { stringValue: art.artistName || "" },
-            artistHandle: art.artistHandle ? { stringValue: art.artistHandle } : { nullValue: null },
-            category: { stringValue: art.category || "" },
-            size: { stringValue: art.size || "" },
-            description: art.description ? { stringValue: art.description } : { nullValue: null },
-            imageUrl: art.imageUrl ? { stringValue: art.imageUrl } : { nullValue: null },
-            videoUrl: art.videoUrl ? { stringValue: art.videoUrl } : { nullValue: null },
-            textEssay: art.textEssay ? { stringValue: art.textEssay } : { nullValue: null },
-            submittedAt: { stringValue: art.submittedAt || new Date().toISOString() },
-            likes: { integerValue: art.likes || 1 },
-            status: { stringValue: art.status || "pending" },
-            isFeatured: { booleanValue: false }
-          }
-        };
-        const response = await fetch(`${FIRESTORE_BASE_URL}/fan_art?documentId=${art.id}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(firestorePayload)
-        });
-        if (!response.ok) {
-          console.error(`[Background Sync] Error syncing fan art ${art.id}:`, await response.text());
-          await redis.rpush("fanart_pending_sync", artStr);
-        }
-      }
-    }
+    // Fan art sync removed: Fan art is now written directly to Firestore in interactionRoutes.ts
 
     console.log(`[Background Sync] Sync routine completed.`);
   } catch (error) {

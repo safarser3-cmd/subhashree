@@ -1,18 +1,18 @@
 import { Router } from "express";
 import redis from "../config/redis";
+import { getAuth, getFirestore, FieldValue } from "../config/firebaseAdmin";
 
 const router = Router();
 const fallbackRateLimit = new Map<string, { count: number, resetAt: number }>();
 const WINDOW_MS = 10 * 60 * 1000;
-const MAX_LIKE_REQUESTS = 50; // 50 likes per 10 mins
-const MAX_LOVE_REQUESTS = 100; // 100 love taps per 10 mins
+const MAX_LIKE_REQUESTS = 50; 
+const MAX_LOVE_REQUESTS = 100;
 
 function checkRateLimit(ip: string, action: string, maxRequests: number): boolean {
   const key = `rate_limit:${action}:${ip}`;
   
   if (redis) {
-    // Note: async redis incr is tricky in a sync function, we'll handle it inline
-    return true; // placeholder, actual logic below
+    return true; 
   } else {
     const now = Date.now();
     const record = fallbackRateLimit.get(key);
@@ -43,6 +43,24 @@ async function checkRedisRateLimit(ip: string, action: string, maxRequests: numb
   }
 }
 
+// Middleware to verify Firebase Auth token
+const verifyFirebaseAuth = async (req: any, res: any, next: any) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, reason: "Unauthorized: Missing Bearer token" });
+  }
+
+  const token = authHeader.split('Bearer ')[1];
+  try {
+    const decodedToken = await getAuth().verifyIdToken(token);
+    req.user = decodedToken;
+    next();
+  } catch (error) {
+    console.error("Firebase auth verification failed:", error);
+    return res.status(401).json({ success: false, reason: "Unauthorized: Invalid token" });
+  }
+};
+
 router.post("/love", async (req, res) => {
   const ipRaw = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
   const ip = Array.isArray(ipRaw) ? ipRaw[0] : (typeof ipRaw === 'string' ? ipRaw.split(',')[0].trim() : 'unknown');
@@ -55,30 +73,60 @@ router.post("/love", async (req, res) => {
   if (redis) {
     try {
       await redis.incr("love_meter_pending_sync");
-      // Could also broadcast SSE here if we wanted true live without Firestore, but we can stick to Firestore for love meter read
     } catch (e) {}
   }
   res.json({ success: true });
 });
 
-router.post("/fanart", async (req, res) => {
+router.post("/fanart", verifyFirebaseAuth, async (req: any, res: any) => {
   const ipRaw = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
   const ip = Array.isArray(ipRaw) ? ipRaw[0] : (typeof ipRaw === 'string' ? ipRaw.split(',')[0].trim() : 'unknown');
+  const uid = req.user.uid;
   
-  const allowed = await checkRedisRateLimit(ip, "fanart", 10); // max 10 fan arts per 10 mins
-  if (!allowed) {
+  const ipAllowed = await checkRedisRateLimit(ip, "fanart", 10);
+  const userAllowed = await checkRedisRateLimit(uid, "fanart_user", 10);
+  
+  if (!ipAllowed || !userAllowed) {
     return res.status(429).json({ success: false, reason: "Too many submissions! Try again later." });
   }
 
-  const art = req.body;
-  if (!art || !art.id) return res.status(400).json({ success: false });
-
-  if (redis) {
-    try {
-      await redis.lpush("fanart_pending_sync", JSON.stringify(art));
-    } catch (e) {}
+  const { title, artistName, artistHandle, category, size, imageUrl, videoUrl, textEssay, description } = req.body;
+  
+  if (!title || typeof title !== 'string' || title.length > 160) {
+    return res.status(400).json({ success: false, reason: "Invalid or missing title." });
   }
-  res.json({ success: true });
+  if (!artistName || typeof artistName !== 'string' || artistName.length > 120) {
+    return res.status(400).json({ success: false, reason: "Invalid or missing artist name." });
+  }
+
+  const db = getFirestore();
+  const artRef = db.collection('fan_art').doc(); // generate secure server-side ID
+  
+  const artPayload = {
+    id: artRef.id,
+    userId: uid,
+    title: title.trim(),
+    artistName: artistName.trim(),
+    artistHandle: artistHandle ? String(artistHandle).trim() : null,
+    category: category ? String(category) : "Digital Illustration",
+    size: size ? String(size) : null,
+    imageUrl: imageUrl && String(imageUrl).startsWith('https://') ? String(imageUrl).trim() : null,
+    videoUrl: videoUrl && String(videoUrl).startsWith('https://') ? String(videoUrl).trim() : null,
+    textEssay: textEssay ? String(textEssay).substring(0, 5000) : null,
+    description: description ? String(description).substring(0, 2000) : null,
+    submittedAt: new Date().toISOString(),
+    likes: 1,
+    isFeatured: false,
+    status: 'pending' // strict moderation enforcement
+  };
+
+  try {
+    await artRef.set(artPayload);
+    res.json({ success: true, artId: artRef.id });
+  } catch (err) {
+    console.error("Error saving fanart:", err);
+    res.status(500).json({ success: false, reason: "Server error saving fan art." });
+  }
 });
 
 router.post("/fanart/like", async (req, res) => {
@@ -91,23 +139,13 @@ router.post("/fanart/like", async (req, res) => {
   }
 
   const { id } = req.body;
-  if (id) {
+  if (id && typeof id === 'string') {
     try {
-      const PROJECT_ID = process.env.FIRESTORE_PROJECT_ID || "gen-lang-client-0250984123";
-      const DB_ID = process.env.FIRESTORE_DATABASE_ID || "ai-studio-shubhashreesahuf-b7597c00-ccb8-4efe-93b3-07b8951f4efc";
-      const FIRESTORE_BASE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/${DB_ID}/documents`;
-      
-      const currentRes = await fetch(`${FIRESTORE_BASE_URL}/fan_art/${id}`);
-      if (currentRes.ok) {
-        const currentDoc = await currentRes.json();
-        const currentLikes = parseInt(currentDoc.fields?.likes?.integerValue || "1", 10);
-        
-        await fetch(`${FIRESTORE_BASE_URL}/fan_art/${id}?updateMask.fieldPaths=likes`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fields: { likes: { integerValue: currentLikes + 1 } } })
-        });
-      }
+      const db = getFirestore();
+      const ref = db.collection('fan_art').doc(id);
+      await ref.update({
+        likes: FieldValue.increment(1)
+      });
     } catch (e) {
       console.error("Error liking fanart directly:", e);
     }

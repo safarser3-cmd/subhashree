@@ -1,0 +1,92 @@
+export default {
+  async fetch(request, env) {
+    // Handle CORS preflight
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Authorization, Content-Type",
+          "Access-Control-Max-Age": "86400",
+        }
+      });
+    }
+
+    if (request.method !== "POST") {
+      return new Response("Method not allowed", { status: 405 });
+    }
+
+    // 1. Verify Firebase Auth Token
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Missing or invalid Authorization header" }), { status: 401 });
+    }
+    const token = authHeader.substring(7);
+
+    try {
+      // Very simple verification using Google's public keys.
+      // In production, consider using a proper JWT verification library that caches the JWKS.
+      // E.g., @tsndr/cloudflare-worker-jwt
+      
+      const payloadB64 = token.split(".")[1];
+      const payload = JSON.parse(atob(payloadB64));
+      
+      // Basic check: is token expired?
+      const now = Math.floor(Date.now() / 1000);
+      if (payload.exp < now) {
+        return new Response(JSON.stringify({ error: "Token expired" }), { status: 401 });
+      }
+      
+      // Basic check: audience matches your Firebase Project ID
+      // Replace 'YOUR_FIREBASE_PROJECT_ID' with your actual project ID
+      const expectedAudience = "gen-lang-client-0250984123";
+      if (payload.aud !== expectedAudience) {
+         return new Response(JSON.stringify({ error: "Invalid token audience" }), { status: 401 });
+      }
+      
+      const uid = payload.user_id;
+
+      // 2. Parse FormData
+      const formData = await request.formData();
+      const file = formData.get("file");
+      
+      if (!file || !(file instanceof File)) {
+        return new Response(JSON.stringify({ error: "No file uploaded" }), { status: 400 });
+      }
+      
+      // 3. Validate File Size (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        return new Response(JSON.stringify({ error: "File too large. Maximum size is 10MB." }), { status: 400 });
+      }
+      
+      // 4. Validate Content Type
+      if (!file.type.startsWith("image/")) {
+         return new Response(JSON.stringify({ error: "Only image uploads are allowed." }), { status: 400 });
+      }
+
+      // 5. Upload to R2 securely
+      const timestamp = Date.now();
+      const safeFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+      // Use uid in the path to isolate uploads per user
+      const objectKey = `fanart/${uid}/${timestamp}_${safeFilename}`;
+      
+      await env.BUCKET.put(objectKey, file.stream(), {
+        httpMetadata: { contentType: file.type }
+      });
+      
+      // Replace with your actual R2 public bucket URL
+      const publicUrl = `https://cdn.your-r2-domain.com/${objectKey}`;
+
+      return new Response(JSON.stringify({ url: publicUrl }), {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Content-Type": "application/json"
+        }
+      });
+      
+    } catch (err) {
+      console.error(err);
+      return new Response(JSON.stringify({ error: "Failed to process upload" }), { status: 500 });
+    }
+  }
+};

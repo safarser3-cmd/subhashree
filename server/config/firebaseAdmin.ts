@@ -1,0 +1,36 @@
+import { getApps, initializeApp, cert } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import dotenv from 'dotenv';
+
+dotenv.config({ override: true });
+
+if (!getApps().length) {
+  try {
+    const projectId = process.env.FIREBASE_PROJECT_ID || 'gen-lang-client-0250984123';
+    
+    // In production Vercel, these must be set
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+    if (clientEmail && privateKey) {
+      initializeApp({
+        credential: cert({
+          projectId,
+          clientEmail,
+          privateKey,
+        }),
+      });
+      console.log('Firebase Admin initialized securely with service account.');
+    } else {
+      console.warn('FIREBASE_CLIENT_EMAIL or FIREBASE_PRIVATE_KEY missing. Admin SDK may fall back to default credentials which could fail.');
+      initializeApp({
+        projectId
+      });
+    }
+  } catch (error) {
+    console.error('Firebase admin initialization error', error);
+  }
+}
+
+export { getAuth, getFirestore, FieldValue };

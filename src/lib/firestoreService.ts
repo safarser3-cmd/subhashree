@@ -308,20 +308,34 @@ export const subscribeToFanArt = (callback: (arts: FanArtSubmission[]) => void) 
 
 export const addFanArtToFirestore = async (art: FanArtSubmission) => {
   try {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) {
+      throw new Error('You must be logged in to submit fan art.');
+    }
+
     const cleanArt = Object.fromEntries(
       Object.entries(art).filter(([_, v]) => v !== undefined)
     );
     const response = await fetch('/api/interactions/fanart', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify(cleanArt)
     });
+
+    const data = await response.json().catch(() => ({}));
+
     if (!response.ok) {
-      throw new Error('Failed to upload artwork due to rate limits or spam block.');
+      if (response.status === 401) throw new Error(data.reason || 'Unauthorized. Please log in again.');
+      if (response.status === 429) throw new Error(data.reason || 'Too many submissions! Try again later.');
+      if (response.status === 400) throw new Error(data.reason || 'Invalid submission data.');
+      throw new Error(data.reason || 'Failed to upload artwork due to a server error.');
     }
-  } catch (e) {
+  } catch (e: any) {
     console.error('Error adding fan art via API:', e);
-    throw new Error('Failed to upload artwork. Please try again later.');
+    throw new Error(e.message || 'Failed to upload artwork. Please try again later.');
   }
 };
 
