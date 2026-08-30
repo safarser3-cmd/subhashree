@@ -91,8 +91,16 @@ router.get("/bio", async (req, res) => {
   }
 });
 
-// POST /api/content/bio (Update bio in Redis)
+// POST /api/content/bio (Update bio in Redis — admin only via simple token check)
 router.post("/bio", async (req, res) => {
+  // Simple shared-secret check: client must send Authorization: Bearer <ADMIN_TOKEN>
+  const adminToken = process.env.ADMIN_API_TOKEN;
+  if (adminToken) {
+    const authHeader = req.headers['authorization'];
+    if (authHeader !== `Bearer ${adminToken}`) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+  }
   try {
     const newBio = req.body;
     if (redis) {

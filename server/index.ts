@@ -27,8 +27,15 @@ async function startServer() {
     crossOriginEmbedderPolicy: false,
   }));
   
-  app.use(cors());
-  app.use(express.json());
+  // CORS — allow same origin in production, open in dev
+  const corsOptions = {
+    origin: process.env.NODE_ENV === 'production'
+      ? (process.env.APP_URL || false)
+      : true,
+    credentials: true,
+  };
+  app.use(cors(corsOptions));
+  app.use(express.json({ limit: '50kb' })); // Limit body size to prevent DoS
 
   // --- Background Tasks ---
   // In Vercel (serverless), we cannot use setInterval. Vercel Cron will hit the /api/cron routes instead.

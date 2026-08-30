@@ -93,8 +93,9 @@ router.post("/fanart/like", async (req, res) => {
   const { id } = req.body;
   if (id) {
     try {
-      const PROJECT_ID = "ai-studio-shubhashreesahuf-b7597c00-ccb8-4efe-93b3-07b8951f4efc";
-      const FIRESTORE_BASE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
+      const PROJECT_ID = process.env.FIRESTORE_PROJECT_ID || "gen-lang-client-0250984123";
+      const DB_ID = process.env.FIRESTORE_DATABASE_ID || "ai-studio-shubhashreesahuf-b7597c00-ccb8-4efe-93b3-07b8951f4efc";
+      const FIRESTORE_BASE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/${DB_ID}/documents`;
       
       const currentRes = await fetch(`${FIRESTORE_BASE_URL}/fan_art/${id}`);
       if (currentRes.ok) {

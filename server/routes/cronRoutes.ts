@@ -4,10 +4,23 @@ import { syncMessagesToFirestore } from "../services/firestoreSync";
 
 const router = Router();
 
+// Middleware: protect all cron routes with CRON_SECRET
+function verifyCronSecret(req: any, res: any, next: any) {
+  const cronSecret = process.env.CRON_SECRET;
+  // If no secret is set (e.g. local dev), allow through
+  if (!cronSecret) return next();
+  const authHeader = req.headers['authorization'];
+  if (authHeader !== `Bearer ${cronSecret}`) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
+
+router.use(verifyCronSecret);
+
 // Endpoint for Vercel Cron to trigger the Apify/Twitter scrape (Every 30 mins)
 router.get("/social", async (req, res) => {
   try {
-    // Note: In production on Vercel, you should secure this by checking req.headers['authorization'] === `Bearer ${process.env.CRON_SECRET}`
     console.log("[Vercel Cron] Triggering Social Metrics Fetch...");
     await fetchAndCacheSocialMetrics();
     res.json({ success: true, message: "Social metrics updated via Cron." });
@@ -30,3 +43,4 @@ router.get("/sync", async (req, res) => {
 });
 
 export default router;
+

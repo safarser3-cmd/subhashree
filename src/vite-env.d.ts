@@ -1,7 +1,12 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
+  readonly VITE_NVIDIA_API_KEY?: string;
   readonly VITE_GEMINI_API_KEY?: string;
+  readonly VITE_OPENAI_API_KEY?: string;
+  readonly VITE_OPENAI_ENDPOINT?: string;
+  readonly VITE_OPENAI_MODEL?: string;
+  readonly VITE_DEEPSEEK_API_KEY?: string;
   readonly VITE_APIFY_API_TOKEN?: string;
   readonly VITE_TWITTER_BEARER_TOKEN?: string;
   readonly VITE_REDIS_URL?: string;
