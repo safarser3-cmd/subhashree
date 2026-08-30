@@ -1,14 +1,9 @@
 // NVIDIA NIM Content Moderation Service
-// Uses the nvidia/llama-3.1-nemoguard-8b-content-safety model via integrate.api.nvidia.com
-// Docs: https://build.nvidia.com/nvidia/llama-3_1-nemoguard-8b-content-safety
-//
-// NOTE: meta/llama-guard-3-8b was deprecated by NVIDIA and returns 404.
-// This service now uses the NemoGuard model which returns JSON:
-//   { "User Safety": "safe" } or
-//   { "User Safety": "unsafe", "Safety Categories": "Violence, Hate Speech" }
+// Uses nvidia/nemotron-3-ultra-550b-a55b via integrate.api.nvidia.com
+// Returns SAFE or UNSAFE: <reason> format
 
 const NVIDIA_API_URL = 'https://integrate.api.nvidia.com/v1/chat/completions';
-const MODEL = 'nvidia/llama-3.1-nemoguard-8b-content-safety';
+const MODEL = 'nvidia/nemotron-3-ultra-550b-a55b';
 const API_KEY = import.meta.env.VITE_NVIDIA_API_KEY as string | undefined;
 
 export interface ModerationResult {
@@ -17,22 +12,24 @@ export interface ModerationResult {
   category?: string;
 }
 
-// Map NemoGuard category strings to user-friendly messages
-function formatNemoCategory(categories: string): string {
-  if (!categories) return 'inappropriate content';
-  const lower = categories.toLowerCase();
-  if (lower.includes('violence') || lower.includes('physical')) return 'Violence or physical harm';
-  if (lower.includes('sexual') || lower.includes('erotic')) return 'Sexual or erotic content';
-  if (lower.includes('hate') || lower.includes('harass')) return 'Hate speech or harassment';
-  if (lower.includes('self-harm') || lower.includes('suicide')) return 'Self-harm or suicide';
-  if (lower.includes('substance') || lower.includes('drug') || lower.includes('controlled')) return 'Substance abuse or illegal drugs';
-  if (lower.includes('weapon') || lower.includes('explosive')) return 'Weapons or explosives';
-  if (lower.includes('spam') || lower.includes('promotion')) return 'Spam or unsolicited promotion';
-  if (lower.includes('defamat') || lower.includes('personal attack')) return 'Defamation or personal attack';
-  if (lower.includes('minor') || lower.includes('child')) return 'Content inappropriate for minors';
-  if (lower.includes('criminal') || lower.includes('illegal')) return 'Criminal planning or illegal activity';
-  return categories; // Return raw string if no match
-}
+const SYSTEM_PROMPT = `You are a content moderator for a public fan appreciation website for a young female public figure.
+
+Read a user-submitted fan comment and decide if it is appropriate to display publicly.
+
+APPROVE if the comment: expresses genuine admiration, compliments her work/talent/fashion/personality, offers encouragement or support, or shares a positive fan experience.
+
+REJECT if the comment (including coded, implied, or indirect language):
+- Contains or implies sexual interest, objectification, or body references
+- References or hints at any private, personal, or intimate content about her (videos, images, recordings, etc.)
+- Uses phrases that imply the user has seen private material ("worth it", "amazing find", "you know what I mean", etc.)
+- Is degrading, harassing, or disrespectful in any way
+- Contains spam, threats, or irrelevant content
+
+Be especially alert to: vague references to "content", "videos", or "material" that imply private/intimate media. Also be alert to abbreviations or slang that may reference private recordings.
+
+Reply with ONLY ONE of these two formats, nothing else:
+SAFE
+UNSAFE: one short sentence reason`;
 
 // Local fallback safety check (very basic, used only if API is unreachable)
 function localFallbackCheck(text: string): ModerationResult {
@@ -74,10 +71,8 @@ export async function moderateMessage(text: string): Promise<ModerationResult> {
       body: JSON.stringify({
         model: MODEL,
         messages: [
-          {
-            role: 'user',
-            content: trimmed,
-          },
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: trimmed },
         ],
         temperature: 0,
         max_tokens: 100,
@@ -94,46 +89,23 @@ export async function moderateMessage(text: string): Promise<ModerationResult> {
     const data = await response.json();
     const raw: string = (data?.choices?.[0]?.message?.content || '').trim();
 
-    // NemoGuard returns JSON like:
-    // { "User Safety": "safe" }
-    // { "User Safety": "unsafe", "Safety Categories": "Violence, Hate Speech" }
-    try {
-      const parsed = JSON.parse(raw);
-      const userSafety = (parsed['User Safety'] || '').toLowerCase();
-      const safetyCategories: string = parsed['Safety Categories'] || '';
-
-      if (userSafety === 'safe') {
-        return { safe: true, reason: 'OK' };
-      }
-
-      if (userSafety === 'unsafe') {
-        const friendlyCategory = formatNemoCategory(safetyCategories);
-        return {
-          safe: false,
-          category: safetyCategories,
-          reason: `Your message was flagged: ${friendlyCategory}. Please rephrase and try again.`,
-        };
-      }
-    } catch {
-      // Response was not JSON — try legacy "safe" / "unsafe S7" plaintext format
-      const lower = raw.toLowerCase();
-      if (lower.startsWith('safe')) {
-        return { safe: true, reason: 'OK' };
-      }
-      if (lower.startsWith('unsafe')) {
-        const parts = lower.split(/\s+/);
-        const code = parts[1]?.toUpperCase() || 'UNSAFE';
-        return {
-          safe: false,
-          category: code,
-          reason: `Your message was flagged as inappropriate. Please rephrase and try again.`,
-        };
-      }
+    if (!raw) {
+      console.warn('[moderation] Empty response from NIM, using local fallback');
+      return localFallbackCheck(trimmed);
     }
 
-    // Unknown response format — fall back to local check
-    console.warn('[moderation] Unexpected NIM response format, using local fallback. Raw:', raw);
-    return localFallbackCheck(trimmed);
+    const isSafe = raw.startsWith('SAFE');
+    const reason = isSafe ? '' : raw.replace(/^UNSAFE:\s*/i, '');
+
+    if (isSafe) {
+      return { safe: true, reason: 'OK' };
+    }
+
+    return {
+      safe: false,
+      category: 'Content Policy',
+      reason: reason || 'Your message was flagged as inappropriate. Please rephrase and try again.',
+    };
 
   } catch (e) {
     console.error('[moderation] Network/API error, using local fallback', e);
