@@ -1,6 +1,5 @@
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import helmet from "helmet";
 import cors from "cors";
@@ -73,6 +72,7 @@ if (!process.env.VERCEL) {
   const startLocalServer = async () => {
     if (process.env.NODE_ENV !== "production") {
       // Development mode
+      const { createServer: createViteServer } = await import("vite");
       const vite = await createViteServer({
         server: { middlewareMode: true },
         appType: "spa",
