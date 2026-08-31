@@ -1,6 +1,7 @@
+import serverModule from '../dist/server.cjs';
+
 export default async function handler(req: any, res: any) {
   try {
-    const serverModule = require('../dist/server.cjs');
     const app = serverModule.default || serverModule;
     return app(req, res);
   } catch (err: any) {
