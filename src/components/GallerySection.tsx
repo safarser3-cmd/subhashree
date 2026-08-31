@@ -178,7 +178,7 @@ export const GallerySection: React.FC = () => {
 
           {/* Right side controls */}
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-            {user?.email === 'safarser3@gmail.com' && (
+            {(user?.email === 'blmoon8724@gmail.com' || user?.email === 'safarser3@gmail.com') && (
               <Suspense fallback={<div className="w-8 h-8 rounded-full border-2 border-emerald-500/50 border-t-transparent animate-spin" />}>
                 <AdminGalleryUpload />
               </Suspense>

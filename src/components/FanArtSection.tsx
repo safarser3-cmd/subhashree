@@ -37,7 +37,7 @@ export const FanArtSection: React.FC<FanArtSectionProps> = ({
 
   const categories = ['All', 'Digital Illustration', 'Pencil Sketch', 'Video Edit & Reel', 'Poetry & Words'];
 
-  const isAdmin = user?.email === 'safarser3@gmail.com';
+  const isAdmin = user?.email === 'blmoon8724@gmail.com' || user?.email === 'safarser3@gmail.com';
   
   // A fan art is approved if its status is 'approved' or if it was featured (legacy mapping)
   const isApproved = (art: FanArtSubmission) => art.status === 'approved' || (!art.status && art.isFeatured);

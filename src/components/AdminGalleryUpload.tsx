@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
-import { Sparkles, X } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Sparkles, X, Upload } from 'lucide-react';
 import { GalleryItem } from '../types';
 import { addGalleryItemInFirestore } from '../lib/firestoreService';
+import { auth } from '../lib/firebase';
 
 export default function AdminGalleryUpload() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [adminUploadData, setAdminUploadData] = useState({
     title: '',
-    imageUrl: '',
     category: 'Photoshoots',
     aspectRatio: '16:9',
     caption: '',
@@ -16,13 +19,41 @@ export default function AdminGalleryUpload() {
 
   const handleAdminSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedFile) {
+      alert("Please select a file to upload.");
+      return;
+    }
+    
+    setIsUploading(true);
     try {
+      // 1. Upload to Cloudflare Worker
+      const token = await auth.currentUser?.getIdToken();
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      const workerUrl = import.meta.env.VITE_CLOUDFLARE_WORKER_URL || 'https://fanart-upload.safarser3.workers.dev';
+      const cleanWorkerUrl = workerUrl.endsWith('/') ? workerUrl.slice(0, -1) : workerUrl;
+      
+      const uploadRes = await fetch(cleanWorkerUrl, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+
+      if (!uploadRes.ok) {
+        const errorData = await uploadRes.json();
+        throw new Error(errorData.error || 'Failed to upload image to R2');
+      }
+
+      const { url } = await uploadRes.json();
+
+      // 2. Save to Firestore
       const newId = `gal-${Date.now()}`;
       const newItem: GalleryItem = {
         id: newId,
         title: adminUploadData.title,
         category: adminUploadData.category as any,
-        imageUrl: adminUploadData.imageUrl,
+        imageUrl: url,
         date: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
         aspectRatio: adminUploadData.aspectRatio as any,
         orientation: adminUploadData.orientation as any,
@@ -32,11 +63,16 @@ export default function AdminGalleryUpload() {
         tags: [adminUploadData.category, 'Official']
       };
       await addGalleryItemInFirestore(newItem);
+      
       setIsOpen(false);
-      setAdminUploadData({ ...adminUploadData, title: '', imageUrl: '', caption: '' });
+      setAdminUploadData({ ...adminUploadData, title: '', caption: '' });
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       alert("Successfully added to gallery!");
     } catch (err: any) {
       alert(err.message);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -61,14 +97,26 @@ export default function AdminGalleryUpload() {
             </div>
             <form onSubmit={handleAdminSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs text-slate-400 mb-1">R2 Public Image URL *</label>
+                <label className="block text-xs text-slate-400 mb-1">Image File (Max 10MB) *</label>
+                <div 
+                  className="w-full bg-black/50 border border-white/10 border-dashed rounded-xl px-4 py-6 text-sm text-center text-slate-400 hover:border-emerald-500/50 cursor-pointer flex flex-col items-center justify-center transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="w-6 h-6 mb-2 text-emerald-400/70" />
+                  {selectedFile ? (
+                    <span className="text-emerald-400 font-medium">{selectedFile.name}</span>
+                  ) : (
+                    <span>Click to browse for an image</span>
+                  )}
+                </div>
                 <input
-                  required
-                  type="url"
-                  value={adminUploadData.imageUrl}
-                  onChange={(e) => setAdminUploadData({ ...adminUploadData, imageUrl: e.target.value })}
-                  className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-sm text-white"
-                  placeholder="https://pub-..."
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) setSelectedFile(e.target.files[0]);
+                  }}
+                  className="hidden"
+                  accept="image/*"
                 />
               </div>
               <div>
@@ -118,9 +166,10 @@ export default function AdminGalleryUpload() {
               </div>
               <button
                 type="submit"
-                className="w-full py-3 mt-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm transition-colors cursor-pointer"
+                disabled={isUploading}
+                className="w-full py-3 mt-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-sm transition-colors cursor-pointer"
               >
-                Upload to Gallery
+                {isUploading ? "Uploading..." : "Upload to Gallery"}
               </button>
             </form>
           </div>

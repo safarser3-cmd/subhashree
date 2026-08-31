@@ -64,7 +64,43 @@ export default {
       
       const uid = payload.user_id;
 
-      // 2. Parse FormData
+      // Handle JSON actions (like /reject)
+      const urlPath = new URL(request.url).pathname;
+      if (urlPath === '/reject') {
+        // Admin only check? Actually, we rely on the Firestore logic to gate the button, 
+        // but ideally we should verify the user is admin. For now, we trust the token if it's the admin email.
+        if (payload.email !== 'blmoon8724@gmail.com' && payload.email !== 'safarser3@gmail.com') {
+          return new Response(JSON.stringify({ error: "Unauthorized admin action" }), { status: 403 });
+        }
+        const body = await request.json();
+        if (body.storageKey) {
+          // Remove leading slash if any
+          const keyToDelete = body.storageKey.startsWith('/') ? body.storageKey.substring(1) : body.storageKey;
+          await env.BUCKET.delete(keyToDelete);
+          return new Response(JSON.stringify({ success: true }), {
+            headers: {
+              "Access-Control-Allow-Origin": "*",
+              "Content-Type": "application/json"
+            }
+          });
+        }
+        return new Response(JSON.stringify({ error: "Missing storageKey" }), { status: 400 });
+      }
+
+      // Handle /approve (we can just leave it where it is, return success)
+      if (urlPath === '/approve') {
+        if (payload.email !== 'blmoon8724@gmail.com' && payload.email !== 'safarser3@gmail.com') {
+          return new Response(JSON.stringify({ error: "Unauthorized admin action" }), { status: 403 });
+        }
+        return new Response(JSON.stringify({ success: true }), {
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Content-Type": "application/json"
+          }
+        });
+      }
+
+      // 2. Parse FormData for file uploads
       const formData = await request.formData();
       const file = formData.get("file");
       
