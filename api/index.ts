@@ -1,2 +1,3 @@
-import app from '../server/index';
-export default app;
+export default function handler(req: any, res: any) {
+  res.status(200).json({ success: true, message: "Hello from raw api/index.ts!" });
+}
