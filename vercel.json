@@ -30,6 +30,14 @@
       "source": "/(.*)",
       "headers": [
         {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://subhaslyf.vercel.app"
+        },
+        {
+          "key": "Vary",
+          "value": "Origin"
+        },
+        {
           "key": "X-Content-Type-Options",
           "value": "nosniff"
         },
