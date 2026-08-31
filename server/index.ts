@@ -19,18 +19,35 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // --- Middleware ---
-// Security headers (helmet) - disables CSP so Vite's HMR and inline styles work seamlessly
+// Allowed origins — never wildcard in production
+const ALLOWED_ORIGINS = [
+  'https://subhaslyf.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:5173',
+];
+
+// Security headers via helmet
 app.use(helmet({
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: false, // Managed by vercel.json in production; permissive in dev
   crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+  crossOriginResourcePolicy: { policy: 'same-origin' },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  xContentTypeOptions: true,
+  frameguard: { action: 'deny' },
 }));
 
-// CORS — allow same origin in production, open in dev
+// CORS — strictly locked to allowed origins only, never wildcard
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production'
-    ? (process.env.APP_URL || false)
-    : true,
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow requests with no origin (server-to-server, curl, Vercel cron)
+    if (!origin) return callback(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS policy: origin '${origin}' not allowed`));
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 };
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '50kb' })); // Limit body size to prevent DoS
