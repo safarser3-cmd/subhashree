@@ -1,6 +1,6 @@
 import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore as getRawFirestore, FieldValue } from 'firebase-admin/firestore';
 import dotenv from 'dotenv';
 
 dotenv.config({ override: true });
@@ -33,4 +33,6 @@ if (!getApps().length) {
   }
 }
 
-export { getAuth, getFirestore, FieldValue };
+const databaseId = process.env.FIRESTORE_DATABASE_ID || 'subhashree-db';
+export const getFirestore = () => getRawFirestore(databaseId);
+export { getAuth, FieldValue };

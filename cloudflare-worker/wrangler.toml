@@ -1,4 +1,4 @@
-name = "fanart-upload"
+name = "fan-art-upload"
 main = "upload.js"
 compatibility_date = "2024-03-20"
 

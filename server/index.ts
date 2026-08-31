@@ -52,9 +52,11 @@ async function startServer() {
     }, FIFTEEN_MINUTES);
   }
 
-  // Optionally do an initial fetch immediately if you want to prime the cache
-  fetchAndCacheSocialMetrics().catch(console.error);
-  syncMessagesToFirestore().catch(console.error);
+  // Optionally do an initial fetch immediately if you want to prime the cache (local only)
+  if (!process.env.VERCEL) {
+    fetchAndCacheSocialMetrics().catch(console.error);
+    syncMessagesToFirestore().catch(console.error);
+  }
 
   // --- API Routes ---
   app.use("/api", socialRoutes);
