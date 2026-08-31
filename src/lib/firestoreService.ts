@@ -423,6 +423,15 @@ export const deleteFanArtFromFirestore = async (id: string) => {
   }
 };
 
+export const rejectFanArtInFirestore = async (id: string) => {
+  try {
+    const ref = doc(db, 'fan_art', id);
+    await updateDoc(ref, { status: 'rejected' });
+  } catch (e) {
+    console.error('Error rejecting fan art:', e);
+  }
+};
+
 export const subscribeToSocialPosts = (callback: (posts: any[]) => void) => {
   try {
     const colRef = collection(db, 'social_posts');

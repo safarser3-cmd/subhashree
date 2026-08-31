@@ -4,7 +4,7 @@ import { Palette, Heart, PlusCircle, Video, Feather, Sparkles, User, Share2, Che
 import confetti from 'canvas-confetti';
 import { useAuthState, useSignInWithGoogle } from 'react-firebase-hooks/auth';
 import { auth } from '../lib/firebase';
-import { approveFanArtInFirestore, featureFanArtInGallery, unfeatureFanArtFromGallery, deleteFanArtFromFirestore } from '../lib/firestoreService';
+import { approveFanArtInFirestore, featureFanArtInGallery, unfeatureFanArtFromGallery, deleteFanArtFromFirestore, rejectFanArtInFirestore } from '../lib/firestoreService';
 
 interface FanArtSectionProps {
   fanArts: FanArtSubmission[];
@@ -149,7 +149,7 @@ export const FanArtSection: React.FC<FanArtSectionProps> = ({
 
   const handleReject = async (art: FanArtSubmission, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (user?.email !== 'safarser3@gmail.com') return;
+    if (!isAdmin) return;
     if (!window.confirm("Are you sure you want to reject and delete this artwork?")) return;
 
     try {
@@ -180,7 +180,7 @@ export const FanArtSection: React.FC<FanArtSectionProps> = ({
         }
       }
       
-      await deleteFanArtFromFirestore(art.id);
+      await rejectFanArtInFirestore(art.id);
     } catch (err) {
       console.error("Error rejecting artwork:", err);
     }
