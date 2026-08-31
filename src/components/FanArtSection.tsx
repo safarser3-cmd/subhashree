@@ -323,7 +323,7 @@ export const FanArtSection: React.FC<FanArtSectionProps> = ({
                   {art.imageUrl ? (
                     <div className="relative h-64 w-full bg-slate-900 overflow-hidden">
                       <img
-                        src={art.imageUrl}
+                        src={art.imageUrl.replace('/pending/', '/fanart/')}
                         alt={art.title}
                         loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"

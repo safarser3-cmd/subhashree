@@ -39,7 +39,7 @@ export const MyUploadsModal: React.FC<MyUploadsModalProps> = ({ isOpen, onClose 
       try {
         const token = await user.getIdToken();
         const apiUrl = import.meta.env.VITE_API_URL || '';
-        const res = await fetch(`${apiUrl}/api/fanart/my-uploads`, {
+        const res = await fetch(`${apiUrl}/api/interactions/fanart/my-uploads`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
@@ -142,11 +142,14 @@ export const MyUploadsModal: React.FC<MyUploadsModalProps> = ({ isOpen, onClose 
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {uploads.map((art) => (
+              {uploads.map((art) => {
+                // Fix old URLs that had /pending/ incorrectly returned by the worker
+                const displayUrl = art.imageUrl?.replace('/pending/', '/fanart/');
+                return (
                 <div key={art.id} className="group relative rounded-2xl bg-white/5 border border-white/10 overflow-hidden flex flex-col">
                   <div className="aspect-[4/5] bg-black relative">
-                    {art.imageUrl ? (
-                      <img src={art.imageUrl} alt={art.title} className="w-full h-full object-cover" />
+                    {displayUrl ? (
+                      <img src={displayUrl} alt={art.title} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center text-slate-300 bg-white/5">
                         <p className="text-xs line-clamp-6 italic font-medium">"{art.textEssay}"</p>
@@ -163,7 +166,8 @@ export const MyUploadsModal: React.FC<MyUploadsModalProps> = ({ isOpen, onClose 
                     </p>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
