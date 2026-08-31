@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, Image, Heart, Share2, Menu, X, PlusCircle, Instagram, Youtube, Twitter, LogOut, LogIn, UserCircle2 } from 'lucide-react';
+import { Sparkles, Image, Heart, Share2, Menu, X, PlusCircle, Instagram, Youtube, Twitter, LogOut, LogIn, UserCircle2, LayoutDashboard } from 'lucide-react';
 import { useCurrentUser } from '../lib/authContext';
 import { signInWithGoogle, signInAsGuest, signOutCurrentUser } from '../lib/authService';
 
@@ -7,12 +7,14 @@ interface NavbarProps {
   activeSection: string;
   onNavigate: (sectionId: string) => void;
   onOpenSubmitModal: () => void;
+  onOpenMyUploads: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   activeSection,
   onNavigate,
-  onOpenSubmitModal
+  onOpenSubmitModal,
+  onOpenMyUploads
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -257,8 +259,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                       </div>
                       <div className="border-t border-white/10 my-2" />
                       <button
-                        onClick={handleGlobalSignOut}
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          onOpenMyUploads();
+                        }}
                         className="w-full text-left text-xs text-slate-200 hover:bg-white/5 rounded-xl px-3 py-2 flex items-center gap-2"
+                      >
+                        <LayoutDashboard className="w-4 h-4" /> My Uploads
+                      </button>
+                      <button
+                        onClick={handleGlobalSignOut}
+                        className="w-full text-left text-xs text-rose-300 hover:bg-white/5 rounded-xl px-3 py-2 flex items-center gap-2"
                       >
                         <LogOut className="w-4 h-4" /> Sign out
                       </button>
@@ -376,12 +387,23 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {user ? (
-            <button
-              onClick={handleGlobalSignOut}
-              className="w-full mt-3 text-left px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-200 hover:bg-white/10 flex items-center gap-2"
-            >
-              <LogOut className="w-4 h-4" /> Sign out ({user.displayName || 'Fan'})
-            </button>
+            <>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenMyUploads();
+                }}
+                className="w-full mt-3 text-left px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-200 hover:bg-white/10 flex items-center gap-2"
+              >
+                <LayoutDashboard className="w-4 h-4" /> My Uploads
+              </button>
+              <button
+                onClick={handleGlobalSignOut}
+                className="w-full mt-2 text-left px-4 py-2.5 rounded-xl text-sm font-semibold text-rose-300 hover:bg-white/10 flex items-center gap-2"
+              >
+                <LogOut className="w-4 h-4" /> Sign out ({user.displayName || 'Fan'})
+              </button>
+            </>
           ) : (
             <button
               onClick={() => {

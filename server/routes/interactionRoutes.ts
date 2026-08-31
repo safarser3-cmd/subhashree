@@ -129,6 +129,29 @@ router.post("/fanart", verifyFirebaseAuth, async (req: any, res: any) => {
   }
 });
 
+router.get("/fanart/my-uploads", verifyFirebaseAuth, async (req: any, res: any) => {
+  const uid = req.user.uid;
+  try {
+    const db = getFirestore();
+    const snapshot = await db.collection('fan_art')
+      .where('userId', '==', uid)
+      .get();
+      
+    const uploads: any[] = [];
+    snapshot.forEach(doc => {
+      uploads.push({ id: doc.id, ...doc.data() });
+    });
+    
+    // Sort in memory (simplest without requiring composite indexes)
+    uploads.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+    
+    res.json({ success: true, data: uploads });
+  } catch (err) {
+    console.error("Error fetching my uploads:", err);
+    res.status(500).json({ success: false, reason: "Server error fetching uploads." });
+  }
+});
+
 router.post("/fanart/like", async (req, res) => {
   const ipRaw = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
   const ip = Array.isArray(ipRaw) ? ipRaw[0] : (typeof ipRaw === 'string' ? ipRaw.split(',')[0].trim() : 'unknown');

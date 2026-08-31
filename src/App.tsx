@@ -9,6 +9,7 @@ import { FanArtSection } from './components/FanArtSection';
 import { FanMessagesSection } from './components/FanMessagesSection';
 import { LoveCalculatorSection } from './components/LoveCalculatorSection';
 import { SubmitFanArtModal } from './components/SubmitFanArtModal';
+import { MyUploadsModal } from './components/MyUploadsModal';
 import { Footer } from './components/Footer';
 import { FanArtSubmission } from './types';
 import { subscribeToFanArt, addFanArtToFirestore, likeFanArtInFirestore } from './lib/firestoreService';
@@ -17,6 +18,7 @@ import { AuthProvider } from './lib/authContext';
 export default function App() {
   const [activeSection, setActiveSection] = useState<string>('home');
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
+  const [isMyUploadsOpen, setIsMyUploadsOpen] = useState(false);
 
   // Fan Art State synced with Firestore
   const [fanArts, setFanArts] = useState<FanArtSubmission[]>([]);
@@ -117,6 +119,7 @@ export default function App() {
         activeSection={activeSection}
         onNavigate={handleNavigate}
         onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+        onOpenMyUploads={() => setIsMyUploadsOpen(true)}
       />
 
       {/* Main Fan Portal Modules */}
@@ -160,6 +163,12 @@ export default function App() {
         isOpen={isSubmitModalOpen}
         onClose={() => setIsSubmitModalOpen(false)}
         onSubmit={handleAddFanArt}
+      />
+
+      {/* Modal for Creator Panel (My Uploads) */}
+      <MyUploadsModal
+        isOpen={isMyUploadsOpen}
+        onClose={() => setIsMyUploadsOpen(false)}
       />
 
       {/* Modern Fan Club Footer */}
