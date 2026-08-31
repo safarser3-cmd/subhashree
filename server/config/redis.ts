@@ -3,7 +3,15 @@ import Redis from "ioredis";
 let redis: Redis | null = null;
 if (process.env.REDIS_URL && (process.env.REDIS_URL.startsWith('redis://') || process.env.REDIS_URL.startsWith('rediss://'))) {
   try {
-    redis = new Redis(process.env.REDIS_URL);
+    redis = new Redis(process.env.REDIS_URL, {
+      maxRetriesPerRequest: 1,
+      connectTimeout: 2000,
+      enableOfflineQueue: false,
+      retryStrategy() { return null; } // Don't retry endlessly on serverless
+    });
+    redis.on("error", (err) => {
+      console.warn("Redis connection error, falling back:", err.message);
+    });
     console.log("Redis cache enabled.");
   } catch (error) {
     console.warn("Failed to initialize Redis. Using in-memory cache instead.");

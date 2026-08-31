@@ -12,6 +12,24 @@ export default {
       });
     }
 
+    if (request.method === "GET") {
+      const url = new URL(request.url);
+      const key = url.pathname.substring(1); // strip leading slash
+      if (!key) {
+        return new Response("Not found", { status: 404 });
+      }
+      const object = await env.BUCKET.get(key);
+      if (!object) {
+        return new Response("Object Not Found", { status: 404 });
+      }
+      const headers = new Headers();
+      object.writeHttpMetadata(headers);
+      headers.set("Access-Control-Allow-Origin", "*");
+      headers.set("Cache-Control", "public, max-age=31536000");
+      headers.set("etag", object.httpEtag);
+      return new Response(object.body, { headers });
+    }
+
     if (request.method !== "POST") {
       return new Response("Method not allowed", { status: 405 });
     }
@@ -74,8 +92,8 @@ export default {
         httpMetadata: { contentType: file.type }
       });
       
-      // Replace with your actual R2 public bucket URL
-      const publicUrl = `https://cdn.your-r2-domain.com/${objectKey}`;
+      const url = new URL(request.url);
+      const publicUrl = `${url.origin}/${objectKey}`;
 
       return new Response(JSON.stringify({ url: publicUrl }), {
         headers: {

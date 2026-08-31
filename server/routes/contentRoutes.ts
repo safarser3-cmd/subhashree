@@ -87,7 +87,7 @@ router.get("/bio", async (req, res) => {
     return res.json(DEFAULT_BIO);
   } catch (error) {
     console.error("Error fetching bio from Redis:", error);
-    return res.status(500).json(DEFAULT_BIO);
+    return res.json(DEFAULT_BIO);
   }
 });
 
