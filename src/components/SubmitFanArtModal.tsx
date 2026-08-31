@@ -393,39 +393,26 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
               ) : (
                 <div className="space-y-2">
                   <label className="block text-xs font-bold text-slate-300">
-                    Upload Image or Paste Image URL
+                    Upload Image *
                   </label>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <label className={`flex-1 border-2 border-dashed ${isUploading ? 'border-rose-500/50 bg-rose-500/10 cursor-not-allowed' : 'border-white/15 hover:border-rose-500/50 cursor-pointer'} rounded-2xl p-4 flex flex-col items-center justify-center transition-colors text-center`}>
-                      {isUploading ? (
-                        <div className="w-6 h-6 rounded-full border-2 border-rose-500 border-t-transparent animate-spin mb-1" />
-                      ) : (
-                        <Upload className="w-6 h-6 text-rose-400 mb-1" />
-                      )}
-                      <span className="text-xs font-bold text-slate-200">
-                        {isUploading ? 'Uploading...' : 'Select File'}
-                      </span>
-                      <span className="text-[10px] text-slate-400">PNG, JPG up to 10MB</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageFile}
-                        disabled={isUploading}
-                        className="hidden"
-                      />
-                    </label>
-
-                    <div className="flex-1 flex flex-col justify-center">
-                      <input
-                        type="url"
-                        placeholder="Or paste image URL"
-                        value={imageUrl}
-                        onChange={(e) => setImageUrl(e.target.value)}
-                        disabled={isUploading}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500 disabled:opacity-50"
-                      />
-                    </div>
-                  </div>
+                  <label className={`w-full border-2 border-dashed ${isUploading ? 'border-rose-500/50 bg-rose-500/10 cursor-not-allowed' : 'border-white/15 hover:border-rose-500/50 cursor-pointer'} rounded-2xl p-5 flex flex-col items-center justify-center transition-colors text-center`}>
+                    {isUploading ? (
+                      <div className="w-6 h-6 rounded-full border-2 border-rose-500 border-t-transparent animate-spin mb-1" />
+                    ) : (
+                      <Upload className="w-6 h-6 text-rose-400 mb-1" />
+                    )}
+                    <span className="text-xs font-bold text-slate-200">
+                      {isUploading ? 'Uploading to R2 Storage...' : 'Click to Select Image'}
+                    </span>
+                    <span className="text-[10px] text-slate-400 mt-0.5">PNG, JPG up to 10MB</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageFile}
+                      disabled={isUploading}
+                      className="hidden"
+                    />
+                  </label>
 
                   {imageUrl && (
                     <div className="mt-2 h-28 w-full rounded-xl overflow-hidden bg-black relative border border-white/10">
