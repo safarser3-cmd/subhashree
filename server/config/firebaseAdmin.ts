@@ -7,7 +7,7 @@ dotenv.config({ override: true });
 
 if (!getApps().length) {
   try {
-    const projectId = process.env.FIREBASE_PROJECT_ID || 'gen-lang-client-0250984123';
+    const projectId = process.env.FIREBASE_PROJECT_ID || 'subhashree-sahu-5e0a6';
     
     // In production Vercel, these must be set
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;

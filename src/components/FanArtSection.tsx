@@ -90,7 +90,7 @@ export const FanArtSection: React.FC<FanArtSectionProps> = ({
         const storageKey = urlToMove.substring(urlToMove.indexOf('pending/'));
         
         if (storageKey) {
-          const workerUrl = import.meta.env.VITE_CLOUDFLARE_WORKER_URL || 'https://fan-art-upload.safarser3.workers.dev';
+          const workerUrl = import.meta.env.VITE_CLOUDFLARE_WORKER_URL || 'https://fanart-upload.safarser3.workers.dev';
           const cleanUrl = workerUrl.endsWith('/') ? workerUrl.slice(0, -1) : workerUrl;
           try {
             const res = await fetch(`${cleanUrl}/approve`, {
@@ -163,7 +163,7 @@ export const FanArtSection: React.FC<FanArtSectionProps> = ({
         if (urlToMove.includes('/approved/')) storageKey = urlToMove.substring(urlToMove.indexOf('approved/'));
         
         if (storageKey) {
-          const workerUrl = import.meta.env.VITE_CLOUDFLARE_WORKER_URL || 'https://fan-art-upload.safarser3.workers.dev';
+          const workerUrl = import.meta.env.VITE_CLOUDFLARE_WORKER_URL || 'https://fanart-upload.safarser3.workers.dev';
           const cleanUrl = workerUrl.endsWith('/') ? workerUrl.slice(0, -1) : workerUrl;
           try {
             await fetch(`${cleanUrl}/reject`, {

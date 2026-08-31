@@ -39,7 +39,7 @@ export default {
       
       // Basic check: audience matches your Firebase Project ID
       // Replace 'YOUR_FIREBASE_PROJECT_ID' with your actual project ID
-      const expectedAudience = "gen-lang-client-0250984123";
+      const expectedAudience = "subhashree-sahu-5e0a6";
       if (payload.aud !== expectedAudience) {
          return new Response(JSON.stringify({ error: "Invalid token audience" }), { status: 401 });
       }

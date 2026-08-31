@@ -1,12 +1,12 @@
 {
-  "projectId": "gen-lang-client-0250984123",
-  "appId": "1:221330514710:web:f0cfa86b6bf27238c0e637",
-  "apiKey": "AIzaSyDrhMkl8kipvF5TwS_li25J-Boui6J23A8",
-  "authDomain": "gen-lang-client-0250984123.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-shubhashreesahuf-b7597c00-ccb8-4efe-93b3-07b8951f4efc",
-  "storageBucket": "gen-lang-client-0250984123.firebasestorage.app",
-  "messagingSenderId": "221330514710",
-  "measurementId": "",
-  "oAuthClientId": "221330514710-ad0lj076o126nn6qceb1cmfnnc6vpd9o.apps.googleusercontent.com",
+  "projectId": "subhashree-sahu-5e0a6",
+  "appId": "1:536374869213:web:ed806045c2f8fbe0b82f34",
+  "apiKey": "AIzaSyD8w6QlSzwB_Rj0xvnz0j2R9YgVgWTWe8M",
+  "authDomain": "subhashree-sahu-5e0a6.firebaseapp.com",
+  "firestoreDatabaseId": "subhashree-db",
+  "storageBucket": "subhashree-sahu-5e0a6.firebasestorage.app",
+  "messagingSenderId": "536374869213",
+  "measurementId": "G-M88J3MHVWV",
+  "oAuthClientId": "536374869213-sr1s52033elad3rrls0baqf8ikcv35er.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }

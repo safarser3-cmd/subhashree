@@ -1,7 +1,8 @@
 import redis from "../config/redis";
 
-const PROJECT_ID = "ai-studio-shubhashreesahuf-b7597c00-ccb8-4efe-93b3-07b8951f4efc";
-const FIRESTORE_BASE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
+const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "subhashree-sahu-5e0a6";
+const DB_ID = process.env.FIRESTORE_DATABASE_ID || "subhashree-db";
+const FIRESTORE_BASE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/${DB_ID}/documents`;
 
 export async function syncMessagesToFirestore() {
   if (!redis) return;

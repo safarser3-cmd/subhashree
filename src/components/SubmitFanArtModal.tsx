@@ -60,7 +60,7 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
 
       // Upload to user's Cloudflare Worker (Appended /pending/ to URL to support typical R2 Worker routing)
       const safeName = encodeURIComponent(file.name.replace(/[^a-zA-Z0-9.-]/g, '_'));
-      const workerUrl = import.meta.env.VITE_CLOUDFLARE_WORKER_URL || 'https://fan-art-upload.safarser3.workers.dev';
+      const workerUrl = import.meta.env.VITE_CLOUDFLARE_WORKER_URL || 'https://fanart-upload.safarser3.workers.dev';
       // Remove trailing slash if present
       const cleanUrl = workerUrl.endsWith('/') ? workerUrl.slice(0, -1) : workerUrl;
       const res = await fetch(cleanUrl, {

@@ -157,7 +157,7 @@ export const subscribeToGalleryItems = (callback: (items: GalleryItem[]) => void
       if (snap.empty) {
         // Fallback
         callback(GALLERY_ITEMS);
-        if (auth.currentUser?.email === 'safarser3@gmail.com') {
+        if (auth.currentUser?.email === 'blmoon8724@gmail.com') {
           try {
             for (const item of GALLERY_ITEMS) {
               await setDoc(doc(db, 'gallery_media_v2', item.id), item);

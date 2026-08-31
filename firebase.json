@@ -1,6 +1,6 @@
 {
   "firestore": {
-    "database": "ai-studio-shubhashreesahuf-b7597c00-ccb8-4efe-93b3-07b8951f4efc",
+    "database": "subhashree-db",
     "rules": "firestore.rules"
   }
 }

@@ -1,0 +1,7 @@
+name = "fanart-upload"
+main = "upload.js"
+compatibility_date = "2024-03-20"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "fan-art"
