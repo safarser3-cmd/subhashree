@@ -39,10 +39,12 @@ app.use(helmet({
 
 // CORS — strictly locked to allowed origins only, never wildcard
 const corsOptions = {
-  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    // Allow requests with no origin (server-to-server, curl, Vercel cron)
-    if (!origin) return callback(null, true);
-    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean | string) => void) => {
+    // Server-to-server requests (cron, curl) have no Origin header.
+    // Returning false skips CORS headers entirely (no Access-Control-Allow-Origin emitted).
+    // The request still goes through — CORS only matters for browsers.
+    if (!origin) return callback(null, false);
+    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, origin);
     callback(new Error(`CORS policy: origin '${origin}' not allowed`));
   },
   credentials: true,
