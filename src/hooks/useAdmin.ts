@@ -12,38 +12,15 @@ export function useAdmin(user: User | null | undefined) {
       return;
     }
 
+    // Dynamically check the 'admins' collection in Firestore.
+    // No emails are hardcoded here — all admin management is done via the database.
     const adminDocRef = doc(db, 'admins', user.email);
-    
-    const unsubscribe = onSnapshot(adminDocRef, async (docSnap) => {
-      if (docSnap.exists()) {
-        setIsAdmin(true);
-      } else {
-        // Legacy migration: automatically add them to the database if they are legacy admins
-        if (user.email === 'blmoon8724@gmail.com' || user.email === 'safarser3@gmail.com') {
-          try {
-            const { setDoc } = await import('firebase/firestore');
-            await setDoc(adminDocRef, { 
-              email: user.email, 
-              role: 'admin', 
-              migratedAt: new Date().toISOString() 
-            });
-            setIsAdmin(true);
-          } catch (e) {
-            console.error("Could not seed admin in Firestore", e);
-            setIsAdmin(true); // Fallback so they don't lose access
-          }
-        } else {
-          setIsAdmin(false);
-        }
-      }
+
+    const unsubscribe = onSnapshot(adminDocRef, (docSnap) => {
+      setIsAdmin(docSnap.exists());
     }, (error) => {
       console.error("Error fetching admin status:", error);
-      // Fallback in case Firestore rules block reads
-      if (user.email === 'blmoon8724@gmail.com' || user.email === 'safarser3@gmail.com') {
-         setIsAdmin(true);
-      } else {
-         setIsAdmin(false);
-      }
+      setIsAdmin(false);
     });
 
     return () => unsubscribe();

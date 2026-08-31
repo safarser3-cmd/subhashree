@@ -75,12 +75,10 @@ export default {
           });
           if (adminRes.ok) isAdmin = true;
           
-          // Temporary fallback if Firestore rules block the REST API during migration
-          if (!adminRes.ok && (email === 'blmoon8724@gmail.com' || email === 'safarser3@gmail.com')) {
-             isAdmin = true;
-          }
+          // Temporary fallback if Firestore REST API fails
+          if (!adminRes.ok) isAdmin = false;
         } catch (e) {
-          if (email === 'blmoon8724@gmail.com' || email === 'safarser3@gmail.com') isAdmin = true;
+          isAdmin = false;
         }
       }
 
