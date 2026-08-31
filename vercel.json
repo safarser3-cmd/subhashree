@@ -10,6 +10,11 @@
       "destination": "/index.html"
     }
   ],
+  "functions": {
+    "api/index.ts": {
+      "includeFiles": "dist/**"
+    }
+  },
   "crons": [
     {
       "path": "/api/cron/social",
