@@ -19,6 +19,7 @@ import {
 import { subscribeToGalleryItems, subscribeToFanArt } from '../lib/firestoreService';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../lib/firebase';
+import { useAdmin } from '../hooks/useAdmin';
 
 const AdminGalleryUpload = lazy(() => import('./AdminGalleryUpload'));
 
@@ -27,6 +28,7 @@ type SizeFilter = 'all' | 'mobile' | 'desktop' | 'square';
 
 export const GallerySection: React.FC = () => {
   const [user] = useAuthState(auth);
+  const isAdmin = useAdmin(user);
   
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('all');
@@ -178,7 +180,7 @@ export const GallerySection: React.FC = () => {
 
           {/* Right side controls */}
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-            {(user?.email === 'blmoon8724@gmail.com' || user?.email === 'safarser3@gmail.com') && (
+            {isAdmin && (
               <Suspense fallback={<div className="w-8 h-8 rounded-full border-2 border-emerald-500/50 border-t-transparent animate-spin" />}>
                 <AdminGalleryUpload />
               </Suspense>

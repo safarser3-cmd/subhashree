@@ -63,13 +63,32 @@ export default {
       }
       
       const uid = payload.user_id;
+      const email = payload.email || "";
+
+      // 1.5 Verify Admin dynamically against Firestore
+      let isAdmin = false;
+      if (email) {
+        const firestoreUrl = `https://firestore.googleapis.com/v1/projects/subhashree-sahu-5e0a6/databases/(default)/documents/admins/${encodeURIComponent(email)}`;
+        try {
+          const adminRes = await fetch(firestoreUrl, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (adminRes.ok) isAdmin = true;
+          
+          // Temporary fallback if Firestore rules block the REST API during migration
+          if (!adminRes.ok && (email === 'blmoon8724@gmail.com' || email === 'safarser3@gmail.com')) {
+             isAdmin = true;
+          }
+        } catch (e) {
+          if (email === 'blmoon8724@gmail.com' || email === 'safarser3@gmail.com') isAdmin = true;
+        }
+      }
 
       // Handle JSON actions (like /reject)
       const urlPath = new URL(request.url).pathname;
       if (urlPath === '/reject') {
-        // Admin only check? Actually, we rely on the Firestore logic to gate the button, 
-        // but ideally we should verify the user is admin. For now, we trust the token if it's the admin email.
-        if (payload.email !== 'blmoon8724@gmail.com' && payload.email !== 'safarser3@gmail.com') {
+        // Admin only check
+        if (!isAdmin) {
           return new Response(JSON.stringify({ error: "Unauthorized admin action" }), { status: 403 });
         }
         const body = await request.json();
@@ -89,7 +108,7 @@ export default {
 
       // Handle /approve (we can just leave it where it is, return success)
       if (urlPath === '/approve') {
-        if (payload.email !== 'blmoon8724@gmail.com' && payload.email !== 'safarser3@gmail.com') {
+        if (!isAdmin) {
           return new Response(JSON.stringify({ error: "Unauthorized admin action" }), { status: 403 });
         }
         return new Response(JSON.stringify({ success: true }), {

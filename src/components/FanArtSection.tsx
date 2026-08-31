@@ -5,6 +5,7 @@ import confetti from 'canvas-confetti';
 import { useAuthState, useSignInWithGoogle } from 'react-firebase-hooks/auth';
 import { auth } from '../lib/firebase';
 import { approveFanArtInFirestore, featureFanArtInGallery, unfeatureFanArtFromGallery, deleteFanArtFromFirestore, rejectFanArtInFirestore } from '../lib/firestoreService';
+import { useAdmin } from '../hooks/useAdmin';
 
 interface FanArtSectionProps {
   fanArts: FanArtSubmission[];
@@ -37,7 +38,7 @@ export const FanArtSection: React.FC<FanArtSectionProps> = ({
 
   const categories = ['All', 'Digital Illustration', 'Pencil Sketch', 'Video Edit & Reel', 'Poetry & Words'];
 
-  const isAdmin = user?.email === 'blmoon8724@gmail.com' || user?.email === 'safarser3@gmail.com';
+  const isAdmin = useAdmin(user);
   
   // A fan art is approved if its status is 'approved' or if it was featured (legacy mapping)
   const isApproved = (art: FanArtSubmission) => art.status === 'approved' || (!art.status && art.isFeatured);
