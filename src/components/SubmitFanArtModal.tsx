@@ -422,18 +422,7 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
                 </div>
               )}
 
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
-                  Description / Story behind the creation
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="What inspired you to make this art piece or edit?"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-rose-500"
-                />
-              </div>
+
 
               {/* Submit Button */}
               <div className="pt-2">
