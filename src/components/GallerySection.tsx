@@ -448,10 +448,10 @@ export const GallerySection: React.FC = () => {
             className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4 sm:p-6 md:p-8 animate-fade-in"
             onClick={() => setActiveItem(null)}
           >
-            <div
-              className="relative max-w-4xl w-full bg-[#11131a] rounded-3xl overflow-hidden border border-white/20 shadow-[0_25px_80px_rgba(0,0,0,0.9)] flex flex-col md:flex-row max-h-[90vh]"
-              onClick={(e) => e.stopPropagation()}
-            >
+              <div
+                className="relative w-[96vw] h-[96vh] max-w-none bg-[#11131a] rounded-3xl overflow-hidden border border-white/20 shadow-[0_25px_80px_rgba(0,0,0,0.9)] flex flex-col md:flex-row"
+                onClick={(e) => e.stopPropagation()}
+              >
               {/* Close Button */}
               <button
                 onClick={() => setActiveItem(null)}
@@ -462,7 +462,7 @@ export const GallerySection: React.FC = () => {
               </button>
 
               {/* Lightbox Image Left / Device Preview Stage */}
-              <div className="md:w-3/5 bg-black flex items-center justify-center relative min-h-[340px] md:min-h-[480px] p-4 overflow-hidden">
+              <div className="flex-1 bg-black flex items-center justify-center relative h-full p-4 overflow-hidden">
                 
                 {/* Mode: Phone Frame Preview */}
                 {previewDeviceMode === 'phone' ? (
@@ -503,7 +503,7 @@ export const GallerySection: React.FC = () => {
                   <img
                     src={activeItem.imageUrl}
                     alt={activeItem.title}
-                    className="w-full h-full object-contain max-h-[72vh]"
+                    className="w-full h-full object-contain"
                   />
                 )}
 
@@ -539,7 +539,7 @@ export const GallerySection: React.FC = () => {
               </div>
 
               {/* Lightbox Details Right */}
-              <div className="md:w-2/5 p-6 sm:p-8 flex flex-col justify-between space-y-6">
+              <div className="w-full md:w-80 lg:w-[380px] flex-shrink-0 p-6 sm:p-8 flex flex-col justify-between space-y-6 overflow-y-auto">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
