@@ -330,7 +330,7 @@ export const FanArtSection: React.FC<FanArtSectionProps> = ({
                         className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
                       />
                       <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
-                        {!art.isFeatured && isAdmin && (
+                      {isPending(art) && isAdmin && (
                           <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-yellow-500/90 backdrop-blur-md text-black shadow-md shadow-yellow-500/20 mb-1 animate-pulse">
                             PENDING APPROVAL
                           </span>
@@ -347,7 +347,7 @@ export const FanArtSection: React.FC<FanArtSectionProps> = ({
                     </div>
                   ) : art.category === 'Video Edit & Reel' ? (
                     <div className="h-56 bg-gradient-to-br from-rose-900/40 via-purple-900/40 to-black p-6 flex flex-col items-center justify-center text-center relative border-b border-white/5">
-                      {!art.isFeatured && isAdmin && (
+                      {isPending(art) && isAdmin && (
                         <div className="absolute top-3 left-3">
                           <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-yellow-500/90 backdrop-blur-md text-black shadow-md shadow-yellow-500/20 animate-pulse">
                             PENDING APPROVAL
@@ -366,7 +366,7 @@ export const FanArtSection: React.FC<FanArtSectionProps> = ({
                     </div>
                   ) : (
                     <div className="h-56 bg-gradient-to-br from-[#181924] to-[#11131a] p-6 flex flex-col justify-center relative border-b border-white/5 overflow-hidden">
-                      {!art.isFeatured && isAdmin && (
+                      {isPending(art) && isAdmin && (
                         <div className="absolute top-3 left-3">
                           <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-yellow-500/90 backdrop-blur-md text-black shadow-md shadow-yellow-500/20 animate-pulse">
                             PENDING APPROVAL
