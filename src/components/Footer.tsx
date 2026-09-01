@@ -225,6 +225,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             Built with ❤️ by the Global Shubhashree Sahu Fan Collective.
           </div>
 
+          <div className="flex items-center gap-6">
+            <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer" className="hover:text-rose-400 transition-colors">Privacy Policy</a>
+            <a href="/terms-of-service.html" target="_blank" rel="noopener noreferrer" className="hover:text-rose-400 transition-colors">Terms of Service</a>
+          </div>
+
           <button
             onClick={scrollToTop}
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-all cursor-pointer border border-white/10"

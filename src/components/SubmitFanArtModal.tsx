@@ -426,6 +426,9 @@ export const SubmitFanArtModal: React.FC<SubmitFanArtModalProps> = ({
 
               {/* Submit Button */}
               <div className="pt-2">
+                <p className="text-[10px] text-slate-400 mb-3 text-center">
+                  By submitting, you agree to our <a href="/terms-of-service.html" target="_blank" rel="noopener noreferrer" className="text-rose-400 hover:underline">Terms of Service</a> and <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer" className="text-rose-400 hover:underline">Privacy Policy</a>.
+                </p>
                 <button
                   type="submit"
                   disabled={isSubmitting}
