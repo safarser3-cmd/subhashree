@@ -217,8 +217,17 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         </div>
 
         {/* Massive Brand Text - Like Datawizz Reference */}
-        <div className="py-10 sm:py-16 flex justify-center items-center w-full border-b border-white/5">
-          <span className="font-urbanist font-black text-[22vw] leading-none text-white tracking-tighter select-none drop-shadow-2xl">
+        <div className="py-10 sm:py-16 flex justify-center items-center w-full border-b border-white/5 relative overflow-hidden bg-[#07080b]">
+          {/* Animated Glow Blobs Background (Pink & Blue effect) */}
+          <div className="absolute top-1/2 left-1/4 w-[30vw] h-[30vw] min-w-[250px] min-h-[250px] bg-rose-500/25 rounded-full mix-blend-screen filter blur-[80px] animate-blob -translate-y-1/2 -translate-x-1/2" />
+          <div className="absolute top-1/2 right-1/4 w-[30vw] h-[30vw] min-w-[250px] min-h-[250px] bg-blue-500/25 rounded-full mix-blend-screen filter blur-[80px] animate-blob animation-delay-2000 -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute -bottom-[15vw] left-1/3 w-[40vw] h-[40vw] min-w-[300px] min-h-[300px] bg-purple-600/20 rounded-full mix-blend-screen filter blur-[100px] animate-blob animation-delay-4000" />
+          
+          {/* Black overlay vignette to maintain deep black contrast */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#07080b] via-transparent to-[#07080b] z-0 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#07080b] via-transparent to-[#07080b] z-0 pointer-events-none" />
+
+          <span className="font-urbanist font-black text-[22vw] leading-none text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400/80 tracking-[-0.06em] select-none drop-shadow-[0_0_30px_rgba(244,63,94,0.4)] relative z-10">
             SUBU
           </span>
         </div>
