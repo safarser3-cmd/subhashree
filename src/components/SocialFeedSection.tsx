@@ -21,10 +21,14 @@ const loadXWidgets = () => {
   if (xWidgetsPromise) return xWidgetsPromise;
 
   xWidgetsPromise = new Promise<void>((resolve, reject) => {
-    const script = document.querySelector<HTMLScriptElement>('script[src*="platform.x.com/widgets.js"]');
+    let script = document.querySelector<HTMLScriptElement>('script[src*="platform.x.com/widgets.js"]');
     if (!script) {
-      reject(new Error('X widgets script is missing.'));
-      return;
+      // Dynamically inject the Twitter widgets script
+      script = document.createElement('script');
+      script.async = true;
+      script.src = 'https://platform.x.com/widgets.js';
+      script.charset = 'utf-8';
+      document.head.appendChild(script);
     }
 
     let attempts = 0;
@@ -50,6 +54,37 @@ const loadXWidgets = () => {
   });
 
   return xWidgetsPromise;
+};
+
+const TwitterEmbedCard: React.FC<{ id: string; html: string }> = ({ id, html }) => {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    // Clear any previous content
+    el.innerHTML = html;
+
+    // Load Twitter widgets and tell it to process ONLY this container
+    loadXWidgets()
+      .then(() => {
+        // Small delay to ensure DOM is ready
+        setTimeout(() => {
+          window.twttr?.widgets?.load(el);
+        }, 100);
+      })
+      .catch(() => {});
+  }, [html]);
+
+  return (
+    <div
+      id={`social-post-${id}`}
+      className="glass-panel w-full max-w-[460px] mx-auto rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-[#0b0c10] flex items-center justify-center p-2"
+    >
+      <div ref={containerRef} className="w-full" />
+    </div>
+  );
 };
 
 import {
@@ -648,9 +683,7 @@ export const SocialFeedSection: React.FC = () => {
             filteredPosts.map((post) => {
               if (post.mediaType === 'twitter_embed') {
                 return (
-                  <div key={post.id} id={`social-post-${post.id}`} className="glass-panel w-full max-w-[460px] mx-auto rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-[#0b0c10] flex items-center justify-center p-2">
-                    <div className="w-full" dangerouslySetInnerHTML={{ __html: post.mediaUrl || '' }} />
-                  </div>
+                  <TwitterEmbedCard key={post.id} id={post.id} html={post.mediaUrl || ''} />
                 );
               }
 

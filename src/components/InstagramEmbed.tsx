@@ -77,7 +77,7 @@ export const InstagramEmbed: React.FC<InstagramEmbedProps> = ({ postUrl }) => {
 
     setIsUnavailable(false);
     const container = embedRef.current;
-    const timeoutId = window.setTimeout(() => setIsUnavailable(true), 8000);
+    const timeoutId = window.setTimeout(() => setIsUnavailable(true), 15000);
     const mutationObserver = new MutationObserver(() => {
       const iframe = container.querySelector('iframe');
       if (!iframe) return;
