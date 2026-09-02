@@ -20,16 +20,14 @@ import {
 import { subscribeToGalleryItems, subscribeToFanArt } from '../lib/firestoreService';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../lib/firebase';
-import { useAdmin } from '../hooks/useAdmin';
 
-const AdminGalleryUpload = lazy(() => import('./AdminGalleryUpload'));
 
 type ViewMode = 'all' | 'wallpapers' | 'photos';
 type SizeFilter = 'all' | 'mobile' | 'desktop' | 'square';
 
 export const GallerySection: React.FC = () => {
   const [user] = useAuthState(auth);
-  const isAdmin = useAdmin(user);
+
   
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('all');
@@ -181,11 +179,6 @@ export const GallerySection: React.FC = () => {
 
           {/* Right side controls */}
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-            {isAdmin && (
-              <Suspense fallback={<div className="w-8 h-8 rounded-full border-2 border-emerald-500/50 border-t-transparent animate-spin" />}>
-                <AdminGalleryUpload />
-              </Suspense>
-            )}
 
             {/* Search Bar */}
             <div className="relative w-full md:w-72">
@@ -571,7 +564,18 @@ export const GallerySection: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between text-slate-300">
                       <span className="text-slate-400">Date Captured:</span>
-                      <span className="font-semibold text-white">{activeItem.date}</span>
+                      <span className="font-semibold text-white text-right break-words pl-2 max-w-[200px]">
+                        {new Date(activeItem.date).toLocaleString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                          hour12: true
+                        })}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between text-slate-300">
                       <span className="text-slate-400">Total Community Likes:</span>

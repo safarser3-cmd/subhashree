@@ -78,6 +78,27 @@ export const subscribeToResilienceContent = (callback: (content: ResilienceConte
   }
 };
 
+// --- FAN ART ---
+export const subscribeToFanArts = (callback: (arts: FanArtSubmission[]) => void) => {
+  const q = query(
+    collection(db, 'fan_art'),
+    where('status', '==', 'approved'),
+    orderBy('submittedAt', 'desc'),
+    limit(20)
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const arts: FanArtSubmission[] = [];
+    snapshot.forEach((doc) => {
+      arts.push({ id: doc.id, ...doc.data() } as FanArtSubmission);
+    });
+    callback(arts);
+  }, (err) => {
+    console.error('Error fetching fan arts:', err);
+    callback([]);
+  });
+};
+
 // --- FAN MESSAGES ---
 export const subscribeToFanMessages = (callback: (messages: FanMessage[]) => void) => {
   const q = query(
@@ -190,17 +211,7 @@ export const subscribeToGalleryItems = (callback: (items: GalleryItem[]) => void
   }
 };
 
-export const addGalleryItemInFirestore = async (item: GalleryItem) => {
-  try {
-    const cleanItem = Object.fromEntries(
-      Object.entries(item).filter(([_, v]) => v !== undefined)
-    );
-    await setDoc(doc(db, 'gallery_media_v2', item.id), cleanItem);
-  } catch (e) {
-    console.error('Error adding gallery item:', e);
-    throw new Error('Failed to upload. Are you logged in as admin?');
-  }
-};
+
 
 export interface BioContent {
   title: string;
@@ -369,79 +380,6 @@ export const likeFanArtInFirestore = async (id: string, currentLikes: number) =>
   }
 };
 
-export const approveFanArtInFirestore = async (id: string, newImageUrl?: string, newVideoUrl?: string) => {
-  try {
-    const ref = doc(db, 'fan_art', id);
-    const updates: any = { status: 'approved' };
-    if (newImageUrl) updates.imageUrl = newImageUrl;
-    if (newVideoUrl) updates.videoUrl = newVideoUrl;
-    await updateDoc(ref, updates);
-  } catch (e) {
-    console.error('Error approving fan art:', e);
-  }
-};
-
-export const featureFanArtInGallery = async (art: FanArtSubmission) => {
-  try {
-    const galleryRef = doc(db, 'gallery_media_v2', `fanart_${art.id}`);
-    const galleryItem = {
-      id: galleryRef.id,
-      title: art.title,
-      category: 'Wallpapers & Graphics', // Mapped category
-      imageUrl: art.imageUrl || '',
-      date: new Date().toISOString().split('T')[0],
-      aspectRatio: art.size?.includes('9:16') ? '9:16' : 
-                   art.size?.includes('16:9') ? '16:9' : 
-                   art.size?.includes('1:1') ? '1:1' : '4:5',
-      orientation: art.size?.includes('9:16') ? 'mobile' : 
-                   art.size?.includes('16:9') ? 'desktop' : 
-                   art.size?.includes('1:1') ? 'square' : 'portrait',
-      caption: `Created by ${art.artistName}`,
-      photographerOrLocation: `Fan Art by ${art.artistHandle || art.artistName}`,
-      likes: art.likes,
-      tags: ['Fan Art', 'Featured']
-    };
-    await setDoc(galleryRef, galleryItem);
-    
-    // Mark as featured in fan_art collection as well
-    const fanArtRef = doc(db, 'fan_art', art.id);
-    await updateDoc(fanArtRef, { isFeatured: true });
-  } catch (e) {
-    console.error('Error featuring fan art:', e);
-  }
-};
-
-export const unfeatureFanArtFromGallery = async (artId: string) => {
-  try {
-    // Remove from gallery
-    const galleryRef = doc(db, 'gallery_media_v2', `fanart_${artId}`);
-    await deleteDoc(galleryRef);
-    
-    // Unmark in fan_art
-    const fanArtRef = doc(db, 'fan_art', artId);
-    await updateDoc(fanArtRef, { isFeatured: false });
-  } catch (e) {
-    console.error('Error unfeaturing fan art:', e);
-  }
-};
-
-export const deleteFanArtFromFirestore = async (id: string) => {
-  try {
-    const ref = doc(db, 'fan_art', id);
-    await deleteDoc(ref); try { await deleteDoc(doc(db, "gallery_media_v2", `fanart_${id}`)); } catch(e) {}
-  } catch (e) {
-    console.error('Error deleting fan art:', e);
-  }
-};
-
-export const rejectFanArtInFirestore = async (id: string) => {
-  try {
-    const ref = doc(db, 'fan_art', id);
-    await updateDoc(ref, { status: 'rejected' });
-  } catch (e) {
-    console.error('Error rejecting fan art:', e);
-  }
-};
 
 export const subscribeToSocialPosts = (callback: (posts: any[]) => void) => {
   try {
