@@ -1,4 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
+import { createPortal } from 'react-dom';
 import { GalleryItem, FanArtSubmission } from '../types';
 import { 
   Image, 
@@ -443,9 +444,9 @@ export const GallerySection: React.FC = () => {
         )}
 
         {/* Fullscreen HD Lightbox & Device Wallpaper Preview Modal */}
-        {activeItem && (
+        {activeItem && typeof document !== 'undefined' && createPortal(
           <div
-            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4 sm:p-6 md:p-8 animate-fade-in"
+            className="fixed inset-0 z-[1000] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4 sm:p-6 md:p-8 animate-fade-in"
             onClick={() => setActiveItem(null)}
           >
               <div
@@ -622,7 +623,8 @@ export const GallerySection: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
 

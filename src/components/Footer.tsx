@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Sparkles, Heart, ArrowUp, Instagram, Youtube, Twitter, Send, Check, Share2, Copy } from 'lucide-react';
-import { INFLUENCER_PROFILE } from '../data/shubhashreeData';
 
 interface FooterProps {
   onNavigate: (sectionId: string) => void;
@@ -64,29 +63,27 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
-              <a
-                href={INFLUENCER_PROFILE.platforms.instagram}
+              <a 
+                href="https://instagram.com/subhaslyf"
                 target="_blank"
-                rel="noreferrer"
-                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-colors"
-                title="Instagram"
+                rel="noopener noreferrer" 
+                className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-pink-500/20 hover:border-pink-500/50 transition-all duration-300 group"
               >
-                <Instagram className="w-4 h-4" />
+                <Instagram className="w-4 h-4 group-hover:scale-110 transition-transform" />
               </a>
-              <a
-                href={INFLUENCER_PROFILE.platforms.youtube}
+              <a 
+                href="https://youtube.com/@subhaback"
                 target="_blank"
-                rel="noreferrer"
-                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-red-600 hover:text-white flex items-center justify-center transition-colors"
-                title="YouTube"
+                rel="noopener noreferrer" 
+                className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-red-500/20 hover:border-red-500/50 transition-all duration-300 group"
               >
-                <Youtube className="w-4 h-4" />
+                <Youtube className="w-4 h-4 group-hover:scale-110 transition-transform" />
               </a>
-              <a
-                href={INFLUENCER_PROFILE.platforms.twitter}
+              <a 
+                href="https://x.com/againsubha"
                 target="_blank"
-                rel="noreferrer"
-                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-sky-500 hover:text-white flex items-center justify-center transition-colors"
+                rel="noopener noreferrer" 
+                className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-sky-500/20 hover:border-sky-500/50 transition-all duration-300 group"
                 title="Twitter / X"
               >
                 <Twitter className="w-4 h-4" />

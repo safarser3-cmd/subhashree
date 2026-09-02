@@ -1,87 +1,49 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Admin check function — purely database-driven, no hardcoded emails
-    function isAdmin() {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/admins/$(request.auth.token.email));
-    }
-
-    // Admins Collection
-    match /admins/{email} {
-      allow read: if request.auth != null && request.auth.token.email == email || isAdmin();
-      allow write: if isAdmin();
-    }
-
-    // Fan wall messages
-    match /fan_messages/{messageId} {
+    // site_config is publicly readable - hero photos, social profiles, resilience content etc.
+    match /site_config/{docId} {
       allow read: if true;
-      allow create: if request.resource.data.senderName is string 
-                    && request.resource.data.message is string
-                    && request.resource.data.message.size() <= 1000;
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
-      allow delete: if isAdmin();
-    }
-
-    // Site Stats (Love meter)
-    match /site_stats/{statId} {
-      allow read: if true;
-      allow write: if true; // Keeping open for the increment love counter
-    }
-
-    // Gallery media items (v1 & v2)
-    match /gallery_media/{mediaId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow write: if request.auth != null && request.auth.token.email == 'blmoon8724@gmail.com';
     }
     
-    match /gallery_media_v2/{mediaId} {
+    // Fan messages - anyone can read, authenticated users can write
+    match /fan_messages/{docId} {
       allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    // Fan Art
-    match /fan_art/{artId} {
-      allow read: if true;
-      
-      // Fan Art is created via secure backend API. Only admins can write directly via client SDK.
-      allow create: if isAdmin();
-      
-      // Non-admins can only update 'likes'. Admins can update anything (like 'isFeatured').
-      allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])) || isAdmin();
-      
-      allow delete: if isAdmin();
-    }
-
-    // Business & Collaboration inquiries
-    match /collaborations/{collabId} {
       allow create: if true;
-      allow read, update, delete: if isAdmin();
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null && request.auth.token.email == 'blmoon8724@gmail.com';
+    }
+    
+    // Gallery media - publicly readable
+    match /gallery_media_v2/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.email == 'blmoon8724@gmail.com';
+    }
+    
+    // Social posts - publicly readable
+    match /social_posts/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.email == 'blmoon8724@gmail.com';
     }
 
-    // Live social metric snapshots
-    match /social_snapshots/{snapshotId} {
+    // Instagram posts - publicly readable
+    match /instagramPosts/{docId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if request.auth != null && request.auth.token.email == 'blmoon8724@gmail.com';
     }
 
-    // Social Posts
-    match /social_posts/{postId} {
+    // Site stats - publicly readable, incrementable
+    match /site_stats/{docId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if true;
     }
-
-    // Instagram embeds store only the public post URL.
-    match /instagramPosts/{postId} {
+    
+    // Fan art submissions - publicly readable
+    match /fan_art/{docId} {
       allow read: if true;
-      allow create: if isAdmin()
-                    && request.resource.data.keys().hasOnly(['postUrl', 'addedAt'])
-                    && request.resource.data.postUrl is string;
-      allow update: if isAdmin()
-                    && request.resource.data.keys().hasOnly(['postUrl', 'addedAt'])
-                    && request.resource.data.postUrl is string;
-      allow delete: if isAdmin();
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.token.email == 'blmoon8724@gmail.com';
     }
   }
 }

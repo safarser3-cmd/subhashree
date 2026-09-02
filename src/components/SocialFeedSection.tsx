@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { SocialPost } from '../types';
-import { InstagramPost, subscribeToInstagramPosts, subscribeToSocialPosts } from '../lib/firestoreService';
+import { SocialPost, SocialProfileCard } from '../types';
+import { InstagramPost, subscribeToInstagramPosts, subscribeToSocialPosts, subscribeToSocialProfiles } from '../lib/firestoreService';
 import { InstagramEmbed } from './InstagramEmbed';
 
 declare global {
@@ -72,90 +72,34 @@ import {
   ShieldCheck
 } from 'lucide-react';
 
-interface SocialProfileCard {
-  platform: 'instagram' | 'twitter' | 'youtube';
-  name: string;
-  handle: string;
-  avatar: string;
-  verified: boolean;
-  badgeTitle: string;
-  statusHighlight: string;
-  followers?: number;
-  followersDisplay?: string;
-  following?: string;
-  postsCount?: string;
-  growth?: string;
-  bio: string;
-  category: string;
-  profileUrl: string;
-  themeGradient: string;
-  badgeBg: string;
-  borderHover: string;
-  isApifyLive?: boolean;
-  isXLive?: boolean;
-}
-
-const INITIAL_PROFILES: SocialProfileCard[] = [
-  {
-    platform: 'instagram',
-    name: 'Shubhashree Sahu',
-    handle: '@subhaslyf',
-    avatar: '/assets/avatar.jpg',
-    verified: true,
-    badgeTitle: 'Instagram Creator',
-    statusHighlight: 'Live Audience Sync',
-    followers: 1559122,
-    followersDisplay: '1.56M',
-    following: '2',
-    postsCount: '253',
-    growth: 'Apify Actor Ready',
-    bio: 'Turning reels into real stories✨\nOdisha📍\nEmail 📧 : Collabs@subhashreesocials.in',
-    category: 'Fashion & Visual Creator',
-    profileUrl: 'https://www.instagram.com/subhaslyf/',
-    themeGradient: 'from-pink-500 via-rose-500 to-amber-400',
-    badgeBg: 'bg-gradient-to-r from-pink-500/20 to-rose-500/20 text-rose-300 border-rose-500/30',
-    borderHover: 'hover:border-rose-500/50 hover:shadow-rose-500/10'
-  },
-  {
-    platform: 'twitter',
-    name: 'Shubhashree Sahu',
-    handle: '@againsubha',
-    avatar: '/assets/avatar.jpg',
-    verified: true,
-    badgeTitle: 'Official X Profile',
-    statusHighlight: 'Direct Updates & Thoughts',
-    bio: 'Official X (formerly Twitter) profile of Shubhashree Sahu. Follow @againsubha for direct thoughts, official announcements, and community interactions.',
-    category: 'Official X Profile',
-    profileUrl: 'https://x.com/againsubha',
-    themeGradient: 'from-sky-400 via-blue-500 to-indigo-600',
-    badgeBg: 'bg-gradient-to-r from-sky-500/20 to-blue-500/20 text-sky-300 border-sky-500/30',
-    borderHover: 'hover:border-sky-500/50 hover:shadow-sky-500/10'
-  },
-  {
-    platform: 'youtube',
-    name: 'Shubhashree Sahu',
-    handle: '@subhaback',
-    avatar: '/assets/avatar.jpg',
-    verified: true,
-    badgeTitle: 'Official YouTube Channel',
-    statusHighlight: 'Video Content & Vlogs',
-    bio: 'Official YouTube home of Shubhashree Sahu. Subscribe to @subhaback for fashion lookbooks, personal vlogs, and 4K video diaries.',
-    category: 'Official YouTube Channel',
-    profileUrl: 'https://www.youtube.com/@subhaback',
-    themeGradient: 'from-red-500 via-rose-600 to-amber-500',
-    badgeBg: 'bg-gradient-to-r from-red-500/20 to-rose-500/20 text-red-300 border-red-500/30',
-    borderHover: 'hover:border-red-500/50 hover:shadow-red-500/10'
-  }
-];
-
 export const SocialFeedSection: React.FC = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<string>('instagram');
-  const [profiles, setProfiles] = useState<SocialProfileCard[]>(INITIAL_PROFILES);
+  const [baseProfiles, setBaseProfiles] = useState<SocialProfileCard[]>([]);
+  const [liveMetrics, setLiveMetrics] = useState<any>({});
+  
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isProfilesLoading, setIsProfilesLoading] = useState(true);
   const [isPostsLoading, setIsPostsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState('Just now');
   const [apifyStatus, setApifyStatus] = useState<{ isConfigured: boolean; isLive: boolean } | null>(null);
+
+  // Compute final profiles by merging base profiles from Firestore with live metrics from API
+  const profiles = baseProfiles.map(p => {
+    const remote = liveMetrics[p.platform];
+    if (!remote) return p;
+    return {
+      ...p,
+      followers: remote.followers ?? p.followers,
+      followersDisplay: remote.followersDisplay ?? p.followersDisplay,
+      following: remote.following ?? p.following,
+      postsCount: remote.postsCount ?? p.postsCount,
+      bio: remote.bio ?? p.bio,
+      growth: remote.growth ?? p.growth,
+      avatar: remote.avatar ? remote.avatar : p.avatar,
+      isApifyLive: p.platform === 'instagram' ? apifyStatus?.isLive : false,
+      isXLive: p.platform === 'twitter' ? liveMetrics.isLiveFromTwitter : false
+    };
+  });
 
   const fetchLiveMetrics = async (force = false) => {
     try {
@@ -168,24 +112,10 @@ export const SocialFeedSection: React.FC = () => {
         });
 
         if (data.profiles) {
-          setProfiles((prev) =>
-            prev.map((p) => {
-              const remote = data.profiles[p.platform];
-              if (!remote) return p;
-              return {
-                ...p,
-                followers: remote.followers ?? p.followers,
-                followersDisplay: remote.followersDisplay ?? p.followersDisplay,
-                following: remote.following ?? p.following,
-                postsCount: remote.postsCount ?? p.postsCount,
-                bio: remote.bio ?? p.bio,
-                growth: remote.growth ?? p.growth,
-                avatar: remote.avatar ? remote.avatar : p.avatar,
-                isApifyLive: p.platform === 'instagram' ? data.isLiveFromApify : false,
-                isXLive: p.platform === 'twitter' ? data.isLiveFromTwitter : false
-              };
-            })
-          );
+          setLiveMetrics({
+            ...data.profiles,
+            isLiveFromTwitter: data.isLiveFromTwitter
+          });
           if (data.isLiveFromApify || data.isLiveFromTwitter) {
             setLastUpdated('Live synced from official APIs');
           } else {
@@ -202,7 +132,12 @@ export const SocialFeedSection: React.FC = () => {
   const [instagramPosts, setInstagramPosts] = useState<InstagramPost[]>([]);
 
   useEffect(() => {
-    fetchLiveMetrics(false).finally(() => setIsProfilesLoading(false));
+    const unsubscribeProfiles = subscribeToSocialProfiles((data) => {
+      setBaseProfiles(data);
+      setIsProfilesLoading(false);
+    });
+
+    fetchLiveMetrics(false);
     
     const unsubscribe = subscribeToSocialPosts((data) => {
       setPosts((data as SocialPost[]).filter((post) => post.platform !== 'instagram'));
@@ -211,18 +146,19 @@ export const SocialFeedSection: React.FC = () => {
     const unsubscribeInstagram = subscribeToInstagramPosts(setInstagramPosts);
 
     return () => {
+      unsubscribeProfiles();
       unsubscribe();
       unsubscribeInstagram();
     };
   }, []);
 
   useEffect(() => {
-    if (selectedPlatform !== 'twitter' || !posts.some((post) => post.platform === 'twitter')) return;
+    if (selectedPlatform !== 'twitter') return;
 
     loadXWidgets()
       .then(() => window.twttr?.widgets?.load())
       .catch(() => {});
-  }, [posts, selectedPlatform]);
+  }, [selectedPlatform, posts]);
 
   const [likedPosts, setLikedPosts] = useState<Set<string>>(() => {
     try {
@@ -676,6 +612,8 @@ export const SocialFeedSection: React.FC = () => {
           </div>
         )}
 
+          {/* X (Twitter) Official Feed will render through the grid below */}
+
         {/* Social Feed 2-Column Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 items-start gap-8">
           {isPostsLoading ? (
@@ -708,6 +646,14 @@ export const SocialFeedSection: React.FC = () => {
             ))
           ) : (
             filteredPosts.map((post) => {
+              if (post.mediaType === 'twitter_embed') {
+                return (
+                  <div key={post.id} id={`social-post-${post.id}`} className="glass-panel w-full max-w-[460px] mx-auto rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-[#0b0c10] flex items-center justify-center p-2">
+                    <div className="w-full" dangerouslySetInnerHTML={{ __html: post.mediaUrl || '' }} />
+                  </div>
+                );
+              }
+
               const isLiked = likedPosts.has(post.id);
               const isCommentOpen = activeCommentPostId === post.id;
 

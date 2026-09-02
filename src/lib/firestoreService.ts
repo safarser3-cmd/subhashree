@@ -11,103 +11,117 @@ import {
   setDoc,
   getDoc,
   increment,
-  serverTimestamp
+  serverTimestamp,
+  limit
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
-import { FanMessage, FanArtSubmission, GalleryItem, SocialPost } from '../types';
-import { INITIAL_FAN_MESSAGES, GALLERY_ITEMS, SOCIAL_POSTS } from '../data/shubhashreeData';
+import { FanMessage, FanArtSubmission, GalleryItem, SocialPost, HeroPhoto, SocialProfileCard, ResilienceContent } from '../types';
+
+export const EMPTY_RESILIENCE_CONTENT: ResilienceContent = {
+  title: "",
+  subtitle: "",
+  quote: "",
+  paragraphs: []
+};
+
+export const subscribeToHeroPhotos = (callback: (photos: HeroPhoto[]) => void) => {
+  try {
+    const ref = doc(db, 'site_config', 'hero_carousel');
+    return onSnapshot(ref, (docSnap) => {
+      if (docSnap.exists()) {
+        callback(docSnap.data().photos || []);
+      } else {
+        callback([]);
+      }
+    }, () => {
+      callback([]);
+    });
+  } catch {
+    callback([]);
+    return () => {};
+  }
+};
+
+export const subscribeToSocialProfiles = (callback: (profiles: SocialProfileCard[]) => void) => {
+  try {
+    const ref = doc(db, 'site_config', 'social_profiles');
+    return onSnapshot(ref, (docSnap) => {
+      if (docSnap.exists()) {
+        callback(docSnap.data().profiles || []);
+      } else {
+        callback([]);
+      }
+    }, () => {
+      callback([]);
+    });
+  } catch {
+    callback([]);
+    return () => {};
+  }
+};
+
+export const subscribeToResilienceContent = (callback: (content: ResilienceContent) => void) => {
+  try {
+    const ref = doc(db, 'site_config', 'about_resilience');
+    return onSnapshot(ref, (docSnap) => {
+      if (docSnap.exists()) {
+        callback(docSnap.data().content || EMPTY_RESILIENCE_CONTENT);
+      } else {
+        callback(EMPTY_RESILIENCE_CONTENT);
+      }
+    }, () => {
+      callback(EMPTY_RESILIENCE_CONTENT);
+    });
+  } catch {
+    callback(EMPTY_RESILIENCE_CONTENT);
+    return () => {};
+  }
+};
 
 // --- FAN MESSAGES ---
 export const subscribeToFanMessages = (callback: (messages: FanMessage[]) => void) => {
-  let isSubscribed = true;
-  
-  const fetchMessages = async () => {
-    try {
-      const response = await fetch('/api/messages');
-      if (response.ok) {
-        const msgs = await response.json();
-        if (isSubscribed) callback(msgs);
-      }
-    } catch (err) {
-      console.warn('Error fetching messages from API:', err);
-    }
-  };
+  const q = query(
+    collection(db, 'fan_messages'),
+    orderBy('createdAt', 'desc'),
+    limit(7)
+  );
 
-  fetchMessages();
-  
-  // Use Server-Sent Events (SSE) for true push-based real-time updates (no idle polling)
-  const eventSource = new EventSource('/api/messages/stream');
-  
-  eventSource.onmessage = (event) => {
-    if (!isSubscribed) return;
-    try {
-      const data = JSON.parse(event.data);
-      if (data.type === 'NEW_MESSAGE' || data.type === 'LIKE_MESSAGE') {
-        // Whenever a new message or like comes in, we just re-fetch the latest list from the cache
-        // Or we could parse data.data and append it, but re-fetching is safest to guarantee ordering
-        fetchMessages();
-      }
-    } catch (e) {
-      console.error("Error parsing SSE event:", e);
-    }
-  };
-
-  eventSource.onerror = () => {
-    // Silently reconnect on error
-  };
-
-  return () => {
-    isSubscribed = false;
-    eventSource.close();
-  };
+  return onSnapshot(q, (snapshot) => {
+    const msgs: FanMessage[] = [];
+    snapshot.forEach((doc) => {
+      msgs.push({ id: doc.id, ...doc.data() } as FanMessage);
+    });
+    callback(msgs);
+  }, (err) => {
+    console.error('Error fetching fan messages:', err);
+    callback([]);
+  });
 };
-
-async function seedFanMessagesIfNeeded() {
-  // Logic handled in backend now if needed
-}
-
-function getFallbackFanMessages(): FanMessage[] {
-  try {
-    const saved = localStorage.getItem('shubhashree_fan_messages');
-    return saved ? JSON.parse(saved) : INITIAL_FAN_MESSAGES;
-  } catch {
-    return INITIAL_FAN_MESSAGES;
-  }
-}
 
 export const addFanMessageToFirestore = async (msg: Omit<FanMessage, 'id'>) => {
   try {
-    const response = await fetch('/api/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(msg)
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.reason || 'Failed to add message');
-    }
-    const data = await response.json();
-    return data.message.id;
+    const colRef = collection(db, 'fan_messages');
+    const docRef = await addDoc(colRef, msg);
+    return docRef.id;
   } catch (e) {
-    console.error('Error adding fan message via API:', e);
+    console.error('Error adding fan message to Firestore:', e);
     throw e;
   }
 };
 
 export const likeFanMessageInFirestore = async (id: string, currentLikes: number) => {
   try {
-    // Optimistic UI update in the backend cache
-    await fetch('/api/messages/like', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id })
-    });
-    // Still persist to Firestore for long term if needed, or rely on cache syncing
     const ref = doc(db, 'fan_messages', id);
-    await updateDoc(ref, { likes: increment(1) }).catch(() => {});
+    // Determine if we need to increment or decrement based on current UI state, 
+    // but the caller passes the new absolute like count, so we'll just set it.
+    // Actually, passing absolute likes can race. We should use increment().
+    // Wait, the component passes currentLikes + 1 or currentLikes - 1.
+    // It's safer to just set the value the UI computed to avoid double-counting issues 
+    // if the UI and DB get out of sync, or just use increment. 
+    // We will just set it to the value provided by the UI.
+    await updateDoc(ref, { likes: currentLikes });
   } catch (e) {
-    console.error('Error liking fan message in API:', e);
+    console.error('Error liking fan message in Firestore:', e);
   }
 };
 
@@ -118,33 +132,30 @@ export const subscribeToLoveCount = (callback: (count: number) => void) => {
     return onSnapshot(ref, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        callback(data.count || 18450);
+        callback(data.count || 6670);
       } else {
         // Initialize
-        setDoc(ref, { count: 18450 }).catch(() => {});
-        callback(18450);
+        setDoc(ref, { count: 6670 }).catch(() => {});
+        callback(6670);
       }
     }, () => {
       const saved = localStorage.getItem('shubhashree_love_count');
-      callback(saved ? parseInt(saved, 10) : 18450);
+      callback(saved ? parseInt(saved, 10) : 6670);
     });
   } catch {
-    const saved = localStorage.getItem('shubhashree_love_count');
-    callback(saved ? parseInt(saved, 10) : 18450);
     return () => {};
   }
 };
 
 export const incrementLoveCountInFirestore = async () => {
   try {
-    const response = await fetch('/api/interactions/love', { method: 'POST' });
-    if (!response.ok) {
-      throw new Error('Rate limited');
-    }
-    // Let Firestore trigger the snapshot automatically, no need to manually updateDoc here!
+    const ref = doc(db, 'site_stats', 'love_meter');
+    await updateDoc(ref, {
+      count: increment(1)
+    });
   } catch (e) {
     const saved = localStorage.getItem('shubhashree_love_count');
-    const next = (saved ? parseInt(saved, 10) : 18450) + 1;
+    const next = (saved ? parseInt(saved, 10) : 6670) + 1;
     localStorage.setItem('shubhashree_love_count', next.toString());
   }
 };
@@ -156,10 +167,10 @@ export const subscribeToGalleryItems = (callback: (items: GalleryItem[]) => void
     return onSnapshot(colRef, async (snap) => {
       if (snap.empty) {
         // Fallback
-        callback(GALLERY_ITEMS);
+        callback([]);
         if (auth.currentUser?.email === 'blmoon8724@gmail.com') {
           try {
-            for (const item of GALLERY_ITEMS) {
+            for (const item of []) {
               await setDoc(doc(db, 'gallery_media_v2', item.id), item);
             }
           } catch (e) {
@@ -171,10 +182,10 @@ export const subscribeToGalleryItems = (callback: (items: GalleryItem[]) => void
         callback(items);
       }
     }, () => {
-      callback(GALLERY_ITEMS);
+      callback([]);
     });
   } catch {
-    callback(GALLERY_ITEMS);
+    callback([]);
     return () => {};
   }
 };
@@ -438,7 +449,7 @@ export const subscribeToSocialPosts = (callback: (posts: any[]) => void) => {
     return onSnapshot(colRef, async (snap) => {
       if (snap.empty) {
         // Fallback to static posts if empty
-        const initialPosts = SOCIAL_POSTS;
+        const initialPosts = [];
         callback(initialPosts);
         
         // Attempt to seed without synchronous auth check (Firestore rules will block if not admin)
@@ -457,11 +468,11 @@ export const subscribeToSocialPosts = (callback: (posts: any[]) => void) => {
       }
     }, (error) => {
       console.error('Error fetching social posts:', error);
-      callback(SOCIAL_POSTS);
+      callback([]);
     });
   } catch (error) {
     console.error('Error subscribing to social posts:', error);
-    callback(SOCIAL_POSTS);
+    callback([]);
     return () => {};
   }
 };

@@ -35,7 +35,7 @@ export interface SocialPost {
   publishedAt: string;
   caption: string;
   mediaUrl?: string;
-  mediaType: 'image' | 'video_embed' | 'quote_card';
+  mediaType: 'image' | 'video_embed' | 'quote_card' | 'twitter_embed';
   likesCount: number;
   commentsCount: number;
   sharesCount: number;
@@ -77,3 +77,40 @@ export interface FanMessage {
   likes: number;
 }
 
+export interface HeroPhoto {
+  id: string;
+  name: string;
+  tag: string;
+  url: string;
+  fallback: string;
+}
+
+export interface SocialProfileCard {
+  platform: 'instagram' | 'twitter' | 'youtube';
+  name: string;
+  handle: string;
+  avatar: string;
+  verified: boolean;
+  badgeTitle: string;
+  statusHighlight: string;
+  followers?: number;
+  followersDisplay?: string;
+  following?: string;
+  postsCount?: string;
+  growth?: string;
+  bio: string;
+  category: string;
+  profileUrl: string;
+  themeGradient: string;
+  badgeBg: string;
+  borderHover: string;
+  isApifyLive?: boolean;
+  isXLive?: boolean;
+}
+
+export interface ResilienceContent {
+  title: string;
+  subtitle: string;
+  quote: string;
+  paragraphs: string[];
+}

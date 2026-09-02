@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ArrowRight, Image as ImageIcon } from 'lucide-react';
+import { HeroPhoto } from '../types';
+import { subscribeToHeroPhotos } from '../lib/firestoreService';
 
 interface ParticleRevealProps {
   currentImageIndex?: number;
@@ -7,46 +9,22 @@ interface ParticleRevealProps {
   onExploreGallery?: () => void;
 }
 
-export const R2_BASE_URL = 'https://pub-f5a2d26958f94a9692b716b327178122.r2.dev/Subhashree%20home%20page';
-
-export const BACKGROUND_PHOTOS = [
-  {
-    id: 'saree-heritage',
-    name: 'Sambalpuri Silk Ikat',
-    tag: 'Traditional Handloom',
-    url: `${R2_BASE_URL}/hero1.jpg`,
-    fallback: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=1920&q=90',
-  },
-  {
-    id: 'sunset-glamour',
-    name: 'Sunset Spotlight',
-    tag: 'Editorial Glamour',
-    url: `${R2_BASE_URL}/hero2.jpg`,
-    fallback: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1920&q=90',
-  },
-  {
-    id: 'red-carpet-noir',
-    name: 'Power Saree Noir',
-    tag: 'Red Carpet Gala',
-    url: `${R2_BASE_URL}/hero3.jpg`,
-    fallback: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1920&q=90',
-  },
-  {
-    id: 'outdoor-grace',
-    name: 'Sanctuary Bloom',
-    tag: 'Eco-Green Series',
-    url: `${R2_BASE_URL}/hero4.jpg`,
-    fallback: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=1920&q=90',
-  },
-];
-
 export const ThreeParticleRevealCanvas: React.FC<ParticleRevealProps> = ({
   currentImageIndex = 0,
   onImageChange,
   onExploreGallery,
 }) => {
+  const [heroPhotos, setHeroPhotos] = useState<HeroPhoto[]>([]);
   const [activePhotoIdx, setActivePhotoIdx] = useState(currentImageIndex);
-  const activePhoto = BACKGROUND_PHOTOS[activePhotoIdx];
+  
+  useEffect(() => {
+    const unsubscribe = subscribeToHeroPhotos((photos) => {
+      setHeroPhotos(photos);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const activePhoto = heroPhotos[activePhotoIdx] || heroPhotos[0];
 
   const handleSelectPhoto = (index: number) => {
     setActivePhotoIdx(index);
@@ -54,14 +32,25 @@ export const ThreeParticleRevealCanvas: React.FC<ParticleRevealProps> = ({
   };
 
   const handleNext = () => {
-    const nextIdx = (activePhotoIdx + 1) % BACKGROUND_PHOTOS.length;
+    if (heroPhotos.length === 0) return;
+    const nextIdx = (activePhotoIdx + 1) % heroPhotos.length;
     handleSelectPhoto(nextIdx);
   };
 
   const handlePrev = () => {
-    const prevIdx = (activePhotoIdx - 1 + BACKGROUND_PHOTOS.length) % BACKGROUND_PHOTOS.length;
+    if (heroPhotos.length === 0) return;
+    const prevIdx = (activePhotoIdx - 1 + heroPhotos.length) % heroPhotos.length;
     handleSelectPhoto(prevIdx);
   };
+
+  if (heroPhotos.length === 0) {
+    return (
+      <div className="relative w-full h-screen min-h-[600px] bg-[#08090e] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-rose-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
 
   return (
     <div
@@ -114,7 +103,7 @@ export const ThreeParticleRevealCanvas: React.FC<ParticleRevealProps> = ({
 
         {/* Thumbnails */}
         <div className="flex items-center gap-1.5">
-          {BACKGROUND_PHOTOS.map((photo, i) => (
+          {heroPhotos.map((photo, i) => (
             <button
               key={photo.id}
               onClick={() => handleSelectPhoto(i)}

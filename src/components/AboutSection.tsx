@@ -23,16 +23,18 @@ import {
   Save,
   X
 } from 'lucide-react';
-import { BioContent, DEFAULT_BIO } from '../lib/firestoreService';
+import { BioContent, DEFAULT_BIO, subscribeToResilienceContent, EMPTY_RESILIENCE_CONTENT } from '../lib/firestoreService';
+import { ResilienceContent } from '../types';
 
 export const AboutSection: React.FC = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [bioData, setBioData] = useState<BioContent>(DEFAULT_BIO);
+  const [resilienceData, setResilienceData] = useState<ResilienceContent>(EMPTY_RESILIENCE_CONTENT);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<BioContent>(DEFAULT_BIO);
 
-  // Fetch bio data from Redis via our backend API
+  // Fetch bio data from Redis via our backend API and resilience data from Firestore
   useEffect(() => {
     const fetchBio = async () => {
       try {
@@ -47,6 +49,11 @@ export const AboutSection: React.FC = () => {
       }
     };
     fetchBio();
+
+    const unsubscribeResilience = subscribeToResilienceContent(setResilienceData);
+    return () => {
+      unsubscribeResilience();
+    };
   }, []);
 
   const handleSaveBio = async (e: React.FormEvent) => {
@@ -273,33 +280,23 @@ export const AboutSection: React.FC = () => {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/20 border border-rose-400/40 text-rose-300 text-xs font-syne font-bold uppercase tracking-wider">
                 <Heart className="w-3.5 h-3.5 fill-rose-400" />
-                <span>Resilience in the Face of Online Judgment</span>
+                <span>{resilienceData.title}</span>
               </div>
               <span className="text-xs text-slate-400 font-syne uppercase tracking-wider font-semibold">
-                An Emotional Reflection
+                {resilienceData.subtitle}
               </span>
             </div>
 
             <h3 className="font-syne text-2xl sm:text-3xl font-extrabold text-white leading-tight">
-              "{bioData.quote}"
+              "{resilienceData.quote}"
             </h3>
 
             <div className="text-slate-200 text-sm sm:text-base leading-relaxed space-y-3.5 font-sans">
-              <p>
-                In the digital era, public judgment is often swift and unforgiving. When private moments 
-                or unverified viral narratives circulate across social platforms, the online world frequently rushes to 
-                label, mock, and criticize a human being without knowing their reality, the silent battles they fight, 
-                or the genuine kindness in their heart.
-              </p>
-              <p>
-                Facing severe cyberbullying, intrusive scrutiny, and instant character judgments, Subhashree demonstrated profound internal resilience. Instead of returning anger with anger, 
-                she chose quiet dignity, mental resolve, and steadfast focus on her life, her creativity, and her community.
-              </p>
-              <p className="text-rose-200 font-medium">
-                Her story stands as an enduring reminder to every young person online: you are defined by your genuine 
-                compassion, how you treat those around you, and how you rise with grace—never by the fleeting, cruel 
-                opinions of strangers.
-              </p>
+              {resilienceData.paragraphs.map((p, idx) => (
+                <p key={idx} className={idx === resilienceData.paragraphs.length - 1 ? "text-rose-200 font-medium" : ""}>
+                  {p}
+                </p>
+              ))}
             </div>
 
             {/* Bottom Quote Strip */}

@@ -39,7 +39,7 @@ type UiState =
 
 export const FanMessagesSection: React.FC = () => {
   const [messages, setMessages] = useState<FanMessage[]>([]);
-  const [loveCount, setLoveCount] = useState<number>(18450);
+  const [loveCount, setLoveCount] = useState<number>(6670);
   const [hasSentLove, setHasSentLove] = useState(false);
   const { user: currentUser, ready: authReady } = useCurrentUser();
 
@@ -173,6 +173,16 @@ export const FanMessagesSection: React.FC = () => {
     const finalMessage = message.trim();
     if (!finalMessage) return;
 
+    const wordCount = finalMessage.split(/\s+/).filter(word => word.length > 0).length;
+    if (wordCount < 30) {
+      setUiState({ kind: 'rejected', reason: 'Please write a minimum of 30 words to avoid spam messages.' });
+      return;
+    }
+    if (wordCount > 80) {
+      setUiState({ kind: 'rejected', reason: 'Please keep your message under 80 words.' });
+      return;
+    }
+
     setUiState({ kind: 'checking' });
 
     const isAnon = currentUser.isAnonymous;
@@ -205,7 +215,7 @@ export const FanMessagesSection: React.FC = () => {
     }
   };
 
-  const charLeft = MAX_MESSAGE_LENGTH - message.length;
+  const currentWordCount = message.trim() ? message.trim().split(/\s+/).length : 0;
   const isChecking = uiState.kind === 'checking';
   const isSuccess = uiState.kind === 'success';
   const isRejected = uiState.kind === 'rejected';
@@ -448,16 +458,15 @@ export const FanMessagesSection: React.FC = () => {
                         <span>Your Message</span>
                         <span
                           className={`text-[10px] font-sans ${
-                            charLeft < 50 ? 'text-rose-400' : 'text-slate-500'
+                            currentWordCount < 30 || currentWordCount > 80 ? 'text-rose-400' : 'text-slate-500'
                           }`}
                         >
-                          {charLeft} left
+                          {currentWordCount}/80 words (min 30)
                         </span>
                       </label>
                       <textarea
                         rows={4}
                         required
-                        maxLength={MAX_MESSAGE_LENGTH}
                         placeholder="Express your admiration for her fashion looks, kind smile, and vlogs..."
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
