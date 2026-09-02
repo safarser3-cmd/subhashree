@@ -220,7 +220,7 @@ export const LoveCalculatorSection: React.FC = () => {
               {/* Fixed Target Name */}
               <div className="flex flex-col gap-2 h-full">
                 <label className="block text-xs font-syne uppercase font-bold text-rose-300 tracking-wider h-5">
-                  Your Celebrity
+                  &nbsp;
                 </label>
                 <div className="relative w-full h-full min-h-[52px] px-4 py-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-200 text-sm font-syne font-bold flex items-center justify-between overflow-hidden group hover:bg-rose-500/20 hover:border-rose-400/50 transition-all">
                   <div className="absolute inset-0 bg-gradient-to-r from-rose-500/0 via-rose-400/10 to-rose-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />

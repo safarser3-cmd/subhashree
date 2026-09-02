@@ -54,13 +54,13 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                   SHUBHASHREE SAHU
                 </span>
                 <span className="text-xs text-rose-400 font-sans">
-                  Official Fan Community Portal
+                  Community Portal
                 </span>
               </div>
             </div>
 
             <p className="font-sans text-sm text-slate-400 leading-relaxed max-w-sm">
-              An independent, dedicated fan hub celebrating influencer Shubhashree Sahu’s style elegance, traditional handloom drapes, creative vlogs, and kind spirit.
+              A community hub for all the latest updates, HD photos, and a place to connect with other supporters of Shubhashree.
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -183,7 +183,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           {/* Newsletter / Fan Alerts (4 cols) */}
           <div className="md:col-span-4 space-y-3">
             <h4 className="font-syne text-xs font-bold uppercase tracking-wider text-white">
-              Fan Alerts & Updates
+              Alerts & Updates
             </h4>
             <p className="font-sans text-xs text-slate-400">
               Get notified when new lookbooks, YouTube vlogs, or community giveaways drop.
@@ -213,16 +213,20 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               </form>
             )}
 
-            <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-[11px] text-slate-400 leading-relaxed mt-4">
-              <strong>Fan Disclaimer:</strong> This portal is a non-commercial, community-run tribute by fans. All imagery, trademarks, and copyrights belong to their respective owners.
-            </div>
           </div>
+        </div>
+
+        {/* Massive Brand Text - Like Datawizz Reference */}
+        <div className="py-10 sm:py-16 flex justify-center items-center w-full border-b border-white/5">
+          <span className="font-urbanist font-black text-[22vw] leading-none text-white tracking-tighter select-none drop-shadow-2xl">
+            SUBU
+          </span>
         </div>
 
         {/* Bottom Bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <div>
-            Built with ❤️ by the Global Shubhashree Sahu Fan Collective.
+            Built with ❤️ in Bangalore.
           </div>
 
           <div className="flex items-center gap-6">
